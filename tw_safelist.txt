@@ -1,0 +1,8 @@
+alert-info
+badge-info
+alert-success
+badge-success
+alert-warning
+badge-warning
+alert-error
+badge-error
