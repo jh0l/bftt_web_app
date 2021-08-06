@@ -1,7 +1,9 @@
 import {useRouter} from 'next/router';
 import {useCallback, useState} from 'react';
 import {useRecoilState} from 'recoil';
+import {useAlerts} from '../state/alerts';
 import {userAtom} from '../state/user';
+import RelayWS from '../state/websockets';
 
 interface LoginResponse {
     user_id: string;
@@ -22,21 +24,25 @@ function loginApi(name: string, pw: string) {
 
 export default function LoginForm() {
     const [user, setUser] = useRecoilState(userAtom);
-    const [pw, setPW] = useState('');
+    const [password, setPW] = useState('');
     const [name, setName] = useState('');
     const router = useRouter();
+    const {pusher} = useAlerts();
     const login = useCallback(async () => {
-        const res = await loginApi(name, pw);
+        const res = await loginApi(name, password);
         try {
             if (res.ok) {
                 const {user_id, msg} = (await res.json()) as LoginResponse;
+                console.log(document.cookie);
+                pusher({msg, type: 'success'});
+                RelayWS.connect({user_id, password});
                 setUser({user_id});
                 router.push('/');
             }
         } catch (e) {
             console.log(e);
         }
-    }, [pw, name, setUser, router]);
+    }, [password, name, setUser, router, pusher]);
     return (
         <div className="card flex-shrink-0 w-full max-w-sm shadow-2xl bg-base-100">
             <div className="card-body">
@@ -61,7 +67,7 @@ export default function LoginForm() {
                         type="text"
                         placeholder="password"
                         className="input input-bordered"
-                        value={pw}
+                        value={password}
                         onChange={(e) => setPW(e.target.value)}
                     />
                     <label className="label">

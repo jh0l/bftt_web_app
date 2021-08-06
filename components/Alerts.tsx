@@ -1,4 +1,4 @@
-import {useEffect} from 'react';
+import {useEffect, useRef} from 'react';
 import {useRecoilValue} from 'recoil';
 import {AlertType, AlertState, useAlerts} from '../state/alerts';
 import Info from './svg/Info';
@@ -11,12 +11,12 @@ function Popup({
     data: AlertType;
     onClose: () => void;
 }) {
+    const time = useRef(timeout || 2000);
     const style = type || 'info';
     useEffect(() => {
-        if (!timeout) return;
-        const id = setTimeout(() => {});
+        const id = setTimeout(onClose, time.current);
         return () => clearTimeout(id);
-    }, [onClose, timeout]);
+    }, [onClose, time]);
 
     return (
         <div className={`pointer-events-auto indicator alert alert-${style}`}>
@@ -36,12 +36,11 @@ function Popup({
 
 export default function Alerts() {
     const alerts = useRecoilValue(AlertState);
-    console.log(alerts);
     const {closer} = useAlerts();
     return (
         <>
             {alerts.length > 0 && (
-                <div className="absolute w-screen h-screen top-0 pointer-events-none flex justify-end items-start p-5">
+                <div className="absolute w-screen h-screen top-0 pointer-events-none flex justify-start items-end flex-col gap-y-5 p-5">
                     {alerts.map((n, i) => (
                         <Popup key={n.key} data={n} onClose={() => closer(i)} />
                     ))}

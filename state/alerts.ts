@@ -12,7 +12,7 @@ type AlertTypeKey = AlertType & {key: number};
 
 export const AlertState = atom({
     key: 'AlertState_v1',
-    default: [{msg: 'hello', key: 1}] as AlertTypeKey[],
+    default: [] as AlertTypeKey[],
 });
 
 export const useAlerts = () => {

@@ -1,11 +1,13 @@
 import Head from 'next/head';
 import LoginForm from '../components/LoginForm';
 
+// call WebSocket.connect( with username, password ) to connect ws
+
 export default function Login() {
     return (
         <>
             <Head>
-                <title>TTT</title>
+                <title>BFTT</title>
                 <meta
                     name="description"
                     content="A turn based social deduction game"
