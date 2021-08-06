@@ -18,7 +18,6 @@ export default function GameModal() {
             pusher({msg: 'Game name required', type: 'error'});
         }
     }, [name, pusher]);
-    console.log(gameInfo);
     useEffect(() => {
         if (gameInfo) {
             router.push(`/game/${name}`);

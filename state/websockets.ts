@@ -1,7 +1,12 @@
 import {SetterOrUpdater} from 'recoil';
 import {splitCmd} from '.';
 const WS_ADDRESS = process.env.WS_ADDRESS;
-type ListenerEvent = '/login' | '/error' | '/host_game_success';
+type ListenerEvent =
+    | '/login'
+    | '/error'
+    | '/host_game_success'
+    | '/join_game_success'
+    | '/player_joined';
 export default class RelayWS {
     static ws: WebSocket | null = null;
     static listeners: Map<string, (p: string) => void> = new Map();
@@ -30,5 +35,10 @@ export default class RelayWS {
     static sendHostGame(gameId: string) {
         if (!RelayWS.ws) throw Error('uninitialised');
         RelayWS.ws.send('/host_game ' + gameId);
+    }
+
+    static sendJoinGame(gameId: string) {
+        if (!RelayWS.ws) throw Error('uninitialised');
+        RelayWS.ws.send('/join_game ' + gameId);
     }
 }

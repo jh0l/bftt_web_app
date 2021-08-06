@@ -8,7 +8,10 @@ interface Player {
     pos: {x: number; y: number};
 }
 
-interface Game {
+type GamePhase = 'Init' | 'InProg' | 'End';
+
+export interface Game {
+    phase: GamePhase;
     game_id: string;
     host_user_id: string;
     players: {[key: string]: Player};
@@ -29,19 +32,33 @@ export const gamesAtomFamily = atomFamily<null | Game, string>({
     default: null,
 });
 
-export const hostGameSuccessHandler = selector<string>({
-    key: 'hostGameSuccessHandler_v1',
-    set: ({set, get}, msg) => {
+export const connectGameSuccessHandler = selector<string>({
+    key: 'connectGameSuccessHandler_v1',
+    set: ({set}, msg) => {
         if (msg instanceof DefaultValue) return;
         const [_, gameStr] = splitCmd(msg);
         const game = JSON.parse(JSON.parse(gameStr)) as Game;
         const game_id = game.game_id;
-        console.log(Object.keys(game));
         set(gamesAtomFamily(game_id), game);
         set(gameListAtom, (v) => [...v, game_id]);
         set(currentGameAtom, game_id);
     },
     get: () => {
-        throw Error('use messageList atom directly');
+        throw Error('do not');
+    },
+});
+
+export const updateGameHandler = selector<string>({
+    key: 'playerJoinedHandler_v1',
+    set: ({set}, msg) => {
+        if (msg instanceof DefaultValue) return;
+        const [_, gameStr] = splitCmd(msg);
+        console.log(_, gameStr);
+        const game = JSON.parse(gameStr) as Game;
+        const game_id = game.game_id;
+        set(gamesAtomFamily(game_id), game);
+    },
+    get: () => {
+        throw Error('do not');
     },
 });
