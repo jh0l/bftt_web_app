@@ -1,48 +1,33 @@
 import Head from 'next/head';
 import {useRouter} from 'next/router';
+import {useEffect} from 'react';
 import {useRecoilValue} from 'recoil';
 import {Game as GameState, gamesAtomFamily} from '../../state/game';
-import useRequiresLogin from '../../state/hooks/useRequiresLogin';
+import useRequiresLogin from '../../state/hooks/useLogin';
+import Game from '../../components/Game';
 
-function Contents({game}: {game: GameState}) {
-    console.log(game);
-    return (
-        <div className="w-full max-w-xs mx-auto">
-            <div className="flex flex-col gap-2">
-                <h1 className="m-5 text-5xl font-bold">{game.game_id}</h1>
-                <div className="shadow stats">
-                    <div className="stat">
-                        <div className="stat-title">Host</div>
-                        <div className="stat-value text-primary">
-                            {game.host_user_id || <pre> </pre>}
-                        </div>
-                    </div>
-                </div>
-                {Object.entries(game.players)
-                    .filter(([k]) => k != game.host_user_id)
-                    .map(([id]) => (
-                        <div className="shadow stats" key={id}>
-                            <div className="stat">
-                                <div className="stat-value text-secondary">
-                                    {id || <pre> </pre>}
-                                </div>
-                            </div>
-                        </div>
-                    ))}
-            </div>
-            <pre className="mb-5" style={{textAlign: 'left'}}>
-                {/* {JSON.stringify(game, null, '  ')} */}
-            </pre>
-        </div>
-    );
-}
-
-export default function Game() {
+export default function GamePage() {
     useRequiresLogin();
     const router = useRouter();
     const {game_id} = router.query;
     const game_id_str = typeof game_id == 'string' ? game_id : '';
     const gameInfo = useRecoilValue(gamesAtomFamily(game_id_str));
+    console.log(gameInfo);
+    useEffect(() => {
+        if (!gameInfo) {
+            router.push('/');
+        }
+    }, [gameInfo, router]);
+    return <Content game_id={game_id} gameInfo={gameInfo} />;
+}
+
+export function Content({
+    game_id,
+    gameInfo,
+}: {
+    game_id: string | string[] | undefined;
+    gameInfo: GameState | null;
+}) {
     return (
         <>
             <Head>
@@ -53,11 +38,11 @@ export default function Game() {
                 />
                 <link rel="icon" href="/favicon.ico" />
             </Head>
-            <div className="hero min-h-screen bg-base-200 flex p-4 m-auto">
+            <div className="min-h-full flex flex-1 p-4 justify-center">
                 {gameInfo ? (
-                    <Contents game={gameInfo} />
+                    <Game game={gameInfo} />
                 ) : (
-                    <div>Game id not recognised</div>
+                    <div>{game_id} not found</div>
                 )}
             </div>
         </>

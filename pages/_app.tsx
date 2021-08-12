@@ -3,6 +3,7 @@ import type {AppProps} from 'next/app';
 import {RecoilRoot} from 'recoil';
 import Alerts from '../components/Alerts';
 import useWebsocket from '../state/hooks/useWebsocket';
+import Navbar from '../components/Navbar';
 
 function WebsocketListener() {
     useWebsocket();
@@ -11,13 +12,14 @@ function WebsocketListener() {
 
 function MyApp({Component, pageProps}: AppProps) {
     return (
-        <>
+        <div className="flex flex-col min-h-screen bg-base-200 ">
             <RecoilRoot>
                 <WebsocketListener />
+                <Navbar />
                 <Component {...pageProps} />
                 <Alerts />
             </RecoilRoot>
-        </>
+        </div>
     );
 }
 export default MyApp;

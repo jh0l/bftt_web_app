@@ -1,18 +1,48 @@
 import {useEffect} from 'react';
-import {useSetRecoilState} from 'recoil';
+import {useRecoilCallback} from 'recoil';
+import {splitCmd} from '..';
 import {useAlerts} from '../alerts';
-import {connectGameSuccessHandler, updateGameHandler} from '../game';
+import {currentGameAtom, Game, gameListAtom, gamesAtomFamily} from '../game';
 import RelayWS from '../websockets';
+import {useLogoutHandler} from './useLogin';
+
+function useConnectGameHandler() {
+    return useRecoilCallback(({set}) => (msg: string) => {
+        const [_, gameStr] = splitCmd(msg);
+        const game = JSON.parse(gameStr) as Game;
+        const game_id = game.game_id;
+        set(gamesAtomFamily(game_id), game);
+        set(gameListAtom, (v) => [...v, game_id]);
+        set(currentGameAtom, game_id);
+    });
+}
+
+function useUpdateGameHandler() {
+    return useRecoilCallback(({set}) => (msg: string) => {
+        const [_, gameStr] = splitCmd(msg);
+        console.log(_, gameStr);
+        const game = JSON.parse(gameStr) as Game;
+        const game_id = game.game_id;
+        console.log(typeof game);
+        set(gamesAtomFamily(game_id), game);
+    });
+}
 
 export default function useWebsocket() {
     const {pusher} = useAlerts();
-    const connectGameSuccess = useSetRecoilState(connectGameSuccessHandler);
-    const updateGame = useSetRecoilState(updateGameHandler);
+    const connectGame = useConnectGameHandler();
+    const updateGame = useUpdateGameHandler();
+    const logout = useLogoutHandler();
     useEffect(() => {
         RelayWS.addListener('/error', (s) => pusher({msg: s, type: 'error'}));
         RelayWS.addListener('/login', (s) => console.log(s));
-        RelayWS.addListener('/host_game_success', connectGameSuccess);
-        RelayWS.addListener('/join_game_success', connectGameSuccess);
+        RelayWS.addListener('/logout', () => {
+            pusher({msg: 'logged in elsewhere'});
+            logout();
+        });
+        RelayWS.addListener('/host_game_success', connectGame);
+        RelayWS.addListener('/join_game_success', connectGame);
         RelayWS.addListener('/player_joined', updateGame);
-    }, [pusher, connectGameSuccess, updateGame]);
+        RelayWS.addListener('/start_game', updateGame);
+    }, [pusher, logout, connectGame, updateGame]);
 }

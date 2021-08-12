@@ -10,6 +10,10 @@
     @apply visible z-50;
 }
 
+.board-scale {
+    max-height: 100%;
+}
+
 html,
 body {
     padding: 0;

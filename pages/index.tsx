@@ -1,15 +1,17 @@
 import Head from 'next/head';
+import {useRecoilValue} from 'recoil';
 import HostGameModal from '../components/HostGameModal';
-import useRequiresLogin from '../state/hooks/useRequiresLogin';
-import JoinGameInput from './JoinGameInput';
+import useRequiresLogin from '../state/hooks/useLogin';
+import {userAtom} from '../state/user';
+import JoinGameInput from '../components/JoinGameInput';
 
 export default function Home() {
     useRequiresLogin();
-
+    const user = useRecoilValue(userAtom);
     return (
         <>
             <Head>
-                <title>BFTT</title>
+                <title>BFTT: {user?.user_id}</title>
                 <meta
                     name="description"
                     content="A turn based social deduction game"
@@ -17,7 +19,7 @@ export default function Home() {
                 <link rel="icon" href="/favicon.ico" />
             </Head>
 
-            <div className="hero min-h-screen bg-base-200">
+            <main className="hero min-h-full bg-base-200 flex-grow">
                 <div className="text-center hero-content">
                     <div className="max-w-md">
                         <h1 className="mb-5 text-4xl font-bold">
@@ -33,7 +35,7 @@ export default function Home() {
                         <JoinGameInput />
                     </div>
                 </div>
-            </div>
+            </main>
         </>
     );
 }

@@ -9,20 +9,26 @@ import X from './svg/X';
 export default function GameModal() {
     const router = useRouter();
     const {pusher} = useAlerts();
-    const [name, setName] = useState('');
+    const [name, setNameRaw] = useState('');
+    const [go, setGo] = useState(false);
     const gameInfo = useRecoilValue(gamesAtomFamily(name));
     const newGame = useCallback(async () => {
+        setGo(true);
         if (name) {
             RelayWS.sendHostGame(name);
         } else {
             pusher({msg: 'Game name required', type: 'error'});
         }
     }, [name, pusher]);
+    const setName = (v: string) => {
+        setGo(false);
+        setNameRaw(v);
+    };
     useEffect(() => {
-        if (gameInfo) {
+        if (gameInfo && go) {
             router.push(`/game/${name}`);
         }
-    }, [gameInfo, router, name, pusher]);
+    }, [gameInfo, router, name, pusher, go]);
     return (
         <>
             <label

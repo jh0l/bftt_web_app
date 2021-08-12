@@ -1,6 +1,7 @@
 import {useRouter} from 'next/router';
-import {useCallback, useState} from 'react';
+import {useCallback, useEffect, useState} from 'react';
 import {useRecoilState} from 'recoil';
+import {strColor} from '../lib/colors';
 import {useAlerts} from '../state/alerts';
 import {userAtom} from '../state/user';
 import RelayWS from '../state/websockets';
@@ -10,16 +11,25 @@ interface LoginResponse {
     msg: string;
 }
 
-function loginApi(name: string, pw: string) {
+async function loginApi(
+    name: string,
+    pw: string
+): Promise<LoginResponse | Error> {
     console.log(process.env.API_ADDRESS);
-    return fetch(process.env.API_ADDRESS + 'login', {
+    const res = await fetch(process.env.API_ADDRESS + 'login', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             Accept: 'application/json',
         },
         body: JSON.stringify({user_id: name, password: pw}),
+        credentials: 'include',
     });
+    try {
+        return (await res.json()) as LoginResponse;
+    } catch (e) {
+        return new Error(e);
+    }
 }
 
 export default function LoginForm() {
@@ -28,33 +38,39 @@ export default function LoginForm() {
     const [name, setName] = useState('');
     const router = useRouter();
     const {pusher} = useAlerts();
+    useEffect(() => {
+        if (user) {
+            router.push('/');
+        }
+    });
     const login = useCallback(async () => {
         const res = await loginApi(name, password);
-        try {
-            if (res.ok) {
-                const {user_id, msg} = (await res.json()) as LoginResponse;
-                console.log(document.cookie);
-                pusher({msg, type: 'success'});
-                RelayWS.connect({user_id, password});
-                setUser({user_id});
-                router.push('/');
-            }
-        } catch (e) {
-            console.log(e);
+        if (res instanceof Error) {
+            console.log(res);
+        } else {
+            const {user_id, msg} = res;
+            pusher({msg, type: 'success'});
+            RelayWS.connect({user_id, password});
+            setUser({user_id});
+            router.push('/');
         }
     }, [password, name, setUser, router, pusher]);
     return (
         <div className="card flex-shrink-0 w-full max-w-sm shadow-2xl bg-base-100">
             <div className="card-body">
                 <div className="form-control">
-                    {JSON.stringify(user)}
                     <label className="label">
-                        <span className="label-text">Username</span>
+                        <span className="label-text">
+                            Username <i>(determines colour)</i>
+                        </span>
                     </label>
                     <input
                         type="text"
                         placeholder="username"
-                        className="input input-bordered"
+                        className={
+                            'input input-bordered text-black bg-' +
+                            (name ? strColor(name) : 'base-100')
+                        }
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                     />

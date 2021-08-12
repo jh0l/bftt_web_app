@@ -3,15 +3,20 @@ import {splitCmd} from '.';
 const WS_ADDRESS = process.env.WS_ADDRESS;
 type ListenerEvent =
     | '/login'
+    | '/logout'
     | '/error'
     | '/host_game_success'
     | '/join_game_success'
-    | '/player_joined';
+    | '/player_joined'
+    | '/start_game';
 export default class RelayWS {
     static ws: WebSocket | null = null;
     static listeners: Map<string, (p: string) => void> = new Map();
 
-    static connect(identity: {user_id: string; password: string}) {
+    static connect(
+        identity: {user_id: string; password: string},
+        callback?: () => void
+    ) {
         if (typeof WS_ADDRESS != 'string')
             throw new Error('WS_ADDRESS not defined');
         let ws = new WebSocket(WS_ADDRESS);
@@ -21,6 +26,7 @@ export default class RelayWS {
         };
         RelayWS.ws = ws;
         ws.onmessage = ({data}: {data: string}) => {
+            callback && callback();
             const [command] = splitCmd(data);
             const handler = RelayWS.listeners.get(command);
             if (handler) handler(data);
@@ -40,5 +46,10 @@ export default class RelayWS {
     static sendJoinGame(gameId: string) {
         if (!RelayWS.ws) throw Error('uninitialised');
         RelayWS.ws.send('/join_game ' + gameId);
+    }
+
+    static sendStartGame(gameId: string) {
+        if (!RelayWS.ws) throw Error('uninitialised');
+        RelayWS.ws.send('/start_game ' + gameId);
     }
 }

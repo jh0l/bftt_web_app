@@ -19,8 +19,7 @@ export const useAlerts = () => {
     const setter = useSetRecoilState(AlertState);
     return {
         closer: useCallback(
-            (index: number) =>
-                setter((s) => [...s.slice(0, index), ...s.slice(index + 1)]),
+            (key: number) => setter((s) => [...s].filter((v) => v.key !== key)),
             [setter]
         ),
         pusher: useCallback(
