@@ -20,7 +20,6 @@ function useConnectGameHandler() {
 function useUpdateGameHandler() {
     return useRecoilCallback(({set}) => (msg: string) => {
         const [_, gameStr] = splitCmd(msg);
-        console.log(_, gameStr);
         const game = JSON.parse(gameStr) as Game;
         const game_id = game.game_id;
         console.log(typeof game);
@@ -44,5 +43,6 @@ export default function useWebsocket() {
         RelayWS.addListener('/join_game_success', connectGame);
         RelayWS.addListener('/player_joined', updateGame);
         RelayWS.addListener('/start_game', updateGame);
+        RelayWS.addListener('/replenish', updateGame);
     }, [pusher, logout, connectGame, updateGame]);
 }

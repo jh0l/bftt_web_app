@@ -1,8 +1,39 @@
 import {useRouter} from 'next/router';
-import {useEffect, useState} from 'react';
-import {useRecoilCallback, useRecoilState, useRecoilValue} from 'recoil';
+import {useEffect} from 'react';
+import {useRecoilCallback, useRecoilState} from 'recoil';
 import {userAtom} from '../user';
 import RelayWS from '../websockets';
+
+interface LoginResponse {
+    user_id: string;
+    msg: string;
+}
+
+export async function loginApi(
+    name: string,
+    pw: string
+): Promise<LoginResponse | Error> {
+    console.log(process.env.API_ADDRESS);
+    const res = await fetch(process.env.API_ADDRESS + 'login', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+        },
+        body: JSON.stringify({user_id: name, password: pw}),
+        credentials: 'include',
+    });
+    try {
+        const data = (await res.json()) as LoginResponse;
+        if (res.ok) {
+            return data;
+        } else {
+            throw data;
+        }
+    } catch (e) {
+        return new Error(e);
+    }
+}
 
 interface IndexResponse {
     user_id: string;
@@ -12,6 +43,28 @@ interface IndexResponse {
 async function indexApi(): Promise<IndexResponse | Error> {
     if (typeof process.env.API_ADDRESS != 'string') throw Error('bad');
     const res = await fetch(process.env.API_ADDRESS, {
+        method: 'GET',
+        headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+        },
+        credentials: 'include',
+    });
+    try {
+        const data = (await res.json()) as IndexResponse;
+        if (res.ok) {
+            return data;
+        } else {
+            throw data;
+        }
+    } catch (e) {
+        return new Error(e);
+    }
+}
+
+async function logoutApi(): Promise<string | Error> {
+    if (typeof process.env.API_ADDRESS != 'string') throw Error('bad');
+    const res = await fetch(process.env.API_ADDRESS + 'logout', {
         method: 'GET',
         headers: {
             'Content-Type': 'application/json',
@@ -35,16 +88,20 @@ export default function useRequiresLogin() {
                 if (res instanceof Error) {
                     console.log(res);
                 } else {
-                    console.log(res);
-                    if (res.user_id && user == null) {
-                        setUser({user_id: res.user_id});
-                        RelayWS.connect({
-                            user_id: res.user_id,
-                            password: res.msg,
+                    if (res.user_id != null && res.msg != null)
+                        loginApi(res.user_id, res.msg).then((loginRes) => {
+                            if (loginRes instanceof Error) {
+                                console.log(loginRes);
+                                router.push('/login');
+                            } else {
+                                setUser({user_id: res.user_id});
+                                RelayWS.connect({
+                                    user_id: res.user_id,
+                                    password: res.msg,
+                                });
+                            }
                         });
-                    } else {
-                        router.push('/login');
-                    }
+                    else router.push('/login');
                 }
             });
         }
@@ -53,7 +110,8 @@ export default function useRequiresLogin() {
 
 export function useLogoutHandler() {
     const router = useRouter();
-    return useRecoilCallback(({reset}) => () => {
+    return useRecoilCallback(({reset}) => async () => {
+        await logoutApi();
         RelayWS.ws?.close();
         reset(userAtom);
         router.push('/login');

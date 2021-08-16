@@ -1,11 +1,35 @@
 import Settings from './svg/Settings';
 import X from './svg/X';
-import {Game as GameState} from '../state/game';
+import {Game as GameState, Pos} from '../state/game';
 import RelayWS from '../state/websockets';
 import {strColor} from '../lib/colors';
+import {useCallback, useMemo} from 'react';
 
-export function Board({game}: {game: GameState}) {
+function tilePerimeter({x, y}: Pos, len: number): number[] {
+    const c = y * len + x;
+    return [c];
+}
+
+export function Board({game, userId}: {game: GameState; userId: string}) {
     const len = game.board.length;
+    const actionables = useMemo(() => {
+        const res = Array(len * len);
+        const player = game.players[userId];
+        for (let i of tilePerimeter(player.pos, len)) {
+            res[i] = true;
+            console.log(i);
+        }
+        console.log(player);
+        return res;
+    }, [game, userId, len]);
+    const tileAction = useCallback(
+        (x: number, y: number) => {
+            const c = y * len + x;
+            if (!actionables[c]) return;
+            alert(x + ' | ' + y);
+        },
+        [actionables, len]
+    );
     return (
         <div className="border-2 border-gray-900 p-1 rounded-lg shadow-lg max-h-10 board-scale xl:w-140 xl:h-140 lg:w-130 lg:h-130 md:w-120 md:h-120 sm:w-96 sm:h-96 w-96 h-96">
             <div
@@ -19,34 +43,73 @@ export function Board({game}: {game: GameState}) {
                 }}
             >
                 {game.board.flat(1).map((v, i) => (
-                    <Tile key={i} v={v} i={i} len={len} />
+                    <Tile
+                        key={i}
+                        v={v}
+                        i={i}
+                        len={len}
+                        action={actionables[i] ? tileAction : undefined}
+                    />
                 ))}
             </div>
         </div>
     );
 }
 
-function Tile({v, i, len}: {v: string | null; i: number; len: number}) {
+function Tile({
+    v,
+    i,
+    len,
+    action,
+}: {
+    v: string | null;
+    i: number;
+    len: number;
+    action?: (x: number, y: number) => void;
+}) {
+    const x = i % len;
+    const y = Math.floor(i / len);
     return (
         <span
             style={{overflow: 'hidden'}}
             className={
-                'text-black flex justify-center items-center border border-gray-800' +
-                (v != null
-                    ? ' rounded-lg shadow-lg bg-' + strColor(v)
-                    : (Math.floor(i / len) + i) % 2 == 0
-                    ? ' bg-gray-700'
-                    : ' bg-gray-600')
+                'relative ' +
+                ((Math.floor(i / len) + i) % 2 == 0
+                    ? ' bg-gray-500'
+                    : ' bg-gray-400')
             }
         >
-            <b>{v}</b>
+            <span
+                className={
+                    'text-black flex justify-center items-center text-center ' +
+                    (v != null && 'shadow-md z-10 bg-' + strColor(v))
+                }
+            >
+                <pre>
+                    x:{x}
+                    {`\n`}y:{y}
+                </pre>
+                <span className="absolute">
+                    <b>{i}</b>
+                </span>
+                {action && (
+                    <button
+                        className="absolute btn btn-tile btn-square btn-outline rounded-lg"
+                        onClick={() => action(x, y)}
+                    />
+                )}
+            </span>
         </span>
     );
 }
 
-export default function Game({game}: {game: GameState}) {
-    console.log(game);
-
+export default function Game({
+    game,
+    userId,
+}: {
+    game: GameState;
+    userId: string;
+}) {
     return (
         <div className="flex flex-grow flex-col sm:flex-row justify-center">
             <div className="flex flex-col gap-2 mr-6 w-58 overflow-hidden">
@@ -90,7 +153,7 @@ export default function Game({game}: {game: GameState}) {
                 </div>
                 <GamePhase game={game} />
             </div>
-            <Board game={game} />
+            <Board game={game} userId={userId} />
         </div>
     );
 }

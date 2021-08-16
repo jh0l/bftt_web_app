@@ -1,14 +1,18 @@
-import {atom, atomFamily, DefaultValue, selector} from 'recoil';
-import {splitCmd} from '.';
+import {atom, atomFamily} from 'recoil';
+
+export interface Pos {
+    x: number;
+    y: number;
+}
 
 interface Player {
     user_id: string;
     lives: number;
     moves: number;
-    pos: {x: number; y: number};
+    pos: Pos;
 }
 
-type GamePhase = 'Init' | 'InProg' | 'End';
+export type GamePhase = 'Init' | 'InProg' | 'End';
 
 export interface Game {
     phase: GamePhase;
@@ -18,6 +22,13 @@ export interface Game {
     turn_time_secs: number;
     board: Array<Array<string | null>>;
     turn_end_unix: number;
+}
+
+type MoveType = {Attack: Pos} | {Move: Pos} | {Give: Pos} | {Hover: Pos};
+
+export interface PlayerMove {
+    user_id: String;
+    move_type: MoveType;
 }
 
 export const currentGameAtom = atom<null | string>({

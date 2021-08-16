@@ -3,34 +3,9 @@ import {useCallback, useEffect, useState} from 'react';
 import {useRecoilState} from 'recoil';
 import {strColor} from '../lib/colors';
 import {useAlerts} from '../state/alerts';
+import {loginApi} from '../state/hooks/useLogin';
 import {userAtom} from '../state/user';
 import RelayWS from '../state/websockets';
-
-interface LoginResponse {
-    user_id: string;
-    msg: string;
-}
-
-async function loginApi(
-    name: string,
-    pw: string
-): Promise<LoginResponse | Error> {
-    console.log(process.env.API_ADDRESS);
-    const res = await fetch(process.env.API_ADDRESS + 'login', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-        },
-        body: JSON.stringify({user_id: name, password: pw}),
-        credentials: 'include',
-    });
-    try {
-        return (await res.json()) as LoginResponse;
-    } catch (e) {
-        return new Error(e);
-    }
-}
 
 export default function LoginForm() {
     const [user, setUser] = useRecoilState(userAtom);
@@ -45,12 +20,12 @@ export default function LoginForm() {
     });
     const login = useCallback(async () => {
         const res = await loginApi(name, password);
+        RelayWS.connect({user_id: name, password});
         if (res instanceof Error) {
             console.log(res);
         } else {
             const {user_id, msg} = res;
             pusher({msg, type: 'success'});
-            RelayWS.connect({user_id, password});
             setUser({user_id});
             router.push('/');
         }

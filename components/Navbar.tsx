@@ -1,5 +1,7 @@
+import {useRouter} from 'next/router';
 import {useState} from 'react';
-import {useRecoilValue} from 'recoil';
+import {useRecoilValue, useResetRecoilState} from 'recoil';
+import {useLogoutHandler} from '../state/hooks/useLogin';
 import {userAtom} from '../state/user';
 
 function Search() {
@@ -47,7 +49,12 @@ function Search() {
 }
 
 function LogoutButton() {
-    return null;
+    const logout = useLogoutHandler();
+    return (
+        <li>
+            <a onClick={logout}>logout</a>
+        </li>
+    );
 }
 
 export default function Navbar() {
@@ -59,15 +66,13 @@ export default function Navbar() {
             <div className="px-2 mx-2 sm:inline-block md:flex-none">
                 <div className="dropdown">
                     <div tabIndex={0} className="m-1 link font-bold text-lg">
-                        {user.user_id}
+                        {user.user_id || <pre> </pre>}
                     </div>
                     <ul
                         tabIndex={0}
                         className="p-2 shadow menu dropdown-content bg-base-100 rounded-box w-52"
                     >
-                        <li>
-                            <a>logout</a>
-                        </li>
+                        <LogoutButton />
                     </ul>
                 </div>
             </div>
