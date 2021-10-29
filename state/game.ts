@@ -45,3 +45,11 @@ export const gamesAtomFamily = atomFamily<null | Game, string>({
     key: 'games_v1',
     default: null,
 });
+
+export const boardTileAtomFamily = atomFamily<
+    string | null,
+    {game_id: string; x: number; y: number}
+>({
+    key: 'boardTileAtomFamily',
+    default: null,
+});

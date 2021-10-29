@@ -48,13 +48,13 @@ export function Content({
                 />
                 <link rel="icon" href="/favicon.ico" />
             </Head>
-            <div className="min-h-full flex flex-1 p-4 justify-center">
-                {gameInfo && userId ? (
-                    <Game game={gameInfo} userId={userId} />
-                ) : (
-                    <div>{game_id} not found</div>
-                )}
-            </div>
+            {/* <div className="max-h-full flex flex-1 justify-center overflow-scroll"> */}
+            {gameInfo && userId ? (
+                <Game game={gameInfo} />
+            ) : (
+                <div>{game_id} not found</div>
+            )}
+            {/* </div> */}
         </>
     );
 }
