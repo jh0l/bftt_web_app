@@ -1,4 +1,3 @@
-import {SetterOrUpdater} from 'recoil';
 import {splitCmd} from '.';
 const WS_ADDRESS = process.env.WS_ADDRESS;
 type ListenerEvent =

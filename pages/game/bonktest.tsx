@@ -1,7 +1,11 @@
-import {GamePhase} from '../../state/game';
+import {useEffect} from 'react';
+import {useRecoilState} from 'recoil';
+import {Game, GamePhase} from '../../state/game';
+import {useUpdateGameHandler} from '../../state/hooks/useWebsocket';
+import {userAtom} from '../../state/user';
 import {Content} from './[game_id]';
 
-const data = {
+const data: Game = {
     game_id: 'bonk',
     phase: 'InProg' as GamePhase,
     host_user_id: 'ebe',
@@ -376,5 +380,19 @@ const data = {
 };
 
 export default function BonkTest() {
-    return <Content game_id="bonk" gameInfo={data} userId={'ebe'} />;
+    const [userId, setUserId] = useRecoilState(userAtom);
+    const updateGame = useUpdateGameHandler();
+    useEffect(() => {
+        !userId && setUserId({user_id: 'ebe'});
+    }, [userId, setUserId]);
+    useEffect(() => {
+        updateGame(JSON.stringify(data));
+    }, [updateGame]);
+    return (
+        <Content
+            game_id="bonk"
+            gameInfo={data}
+            userId={userId?.user_id || 'ebe'}
+        />
+    );
 }
