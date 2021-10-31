@@ -1,43 +1,9 @@
 import Settings from './svg/Settings';
-import {boardTileAtomFamily, Game as GameState} from '../state/game';
+import {Game as GameState} from '../state/game';
 import RelayWS from '../state/websockets';
 import {strColor} from '../lib/colors';
 import {useEffect, useMemo, useRef} from 'react';
-import {useRecoilValue} from 'recoil';
-
-function Tile({i, len, game_id}: {i: number; len: number; game_id: string}) {
-    const x = i % len;
-    const y = Math.floor(i / len);
-    const v = useRecoilValue(boardTileAtomFamily({game_id, x, y}));
-    return (
-        <div
-            className={
-                'grid-item relative ' +
-                ((Math.floor(i / len) + i) % 2 == 0
-                    ? ' bg-gray-500'
-                    : ' bg-gray-400')
-            }
-        >
-            {v && (
-                <div
-                    className={
-                        'w-full h-full rounded-lg flex justify-center items-center absolute ' +
-                        (v != null && 'shadow-md z-10 bg-' + strColor(v))
-                    }
-                    style={{
-                        top: '50%',
-                        left: '50%',
-                        transform: 'translate(-50%, -50%)',
-                    }}
-                >
-                    <button className="text-black font-bold">
-                        {v}
-                    </button>
-                </div>
-            )}
-        </div>
-    );
-}
+import {Tile} from './Tile';
 
 export function Board({game}: {game: GameState}) {
     const len = game.board.length;
@@ -48,7 +14,7 @@ export function Board({game}: {game: GameState}) {
             .map((_, i) => (
                 <Tile key={i} i={i} len={len} game_id={game.game_id} />
             ));
-    }, [len, game.game_id]);
+    }, [len, game]);
     return (
         <div
             className="shadow-2xl"
