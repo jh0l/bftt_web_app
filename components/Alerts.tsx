@@ -13,7 +13,7 @@ function Popup({
     data: AlertType;
     onClose: (index: number) => void;
 }) {
-    const time = useRef(timeout || 2000);
+    const time = useRef(timeout || 3333);
     const style = type || 'info';
     useEffect(() => {
         const id = setTimeout(onClose, time.current, k);
@@ -42,7 +42,7 @@ export default function Alerts() {
     return (
         <>
             {alerts.length > 0 && (
-                <div className="absolute w-screen h-screen top-0 pointer-events-none flex justify-start items-end flex-col gap-y-5 p-5 pt-16">
+                <div className="absolute w-screen h-screen top-0 right-5 pointer-events-none flex justify-start items-end flex-col gap-y-5 p-5 pt-16">
                     {alerts.map((n) => (
                         <Popup
                             key={n.key}
