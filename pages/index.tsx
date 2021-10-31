@@ -19,7 +19,7 @@ export default function Home() {
                 <link rel="icon" href="/favicon.ico" />
             </Head>
 
-            <main className="hero min-h-full bg-base-200 flex-grow">
+            <main className="hero bg-base-200 h-2/3">
                 <div className="text-center hero-content">
                     <div className="max-w-md">
                         <h1 className="mb-5 text-4xl font-bold">
@@ -31,6 +31,7 @@ export default function Home() {
                             In deleniti eaque aut repudiandae et a id nisi.
                         </p>
                         <HostGameModal />
+                        <br></br>
                         <div className="divider">OR</div>
                         <JoinGameInput />
                     </div>

@@ -62,7 +62,6 @@ export default function Navbar() {
     if (!user) return null;
     return (
         <div className="navbar min-h-8 h-8 shadow-lg bg-neutral text-neutral-content">
-            {/* <BurgerMenu /> */}
             <div className="px-2 mx-2 sm:inline-block md:flex-none">
                 <div className="dropdown">
                     <div tabIndex={0} className="m-1 link font-bold text-lg">
@@ -77,7 +76,7 @@ export default function Navbar() {
                 </div>
             </div>
             {/* <Search /> */}
-            <div className="w-full lg:flex max-w-lg mx-auto" />
+            {/* <div className="w-full lg:flex max-w-lg mx-auto" /> */}
             <div className="flex-none mx-px">
                 {/* <button className="btn btn-square btn-ghost">
                     <svg
