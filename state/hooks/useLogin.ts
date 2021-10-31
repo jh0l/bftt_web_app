@@ -1,6 +1,7 @@
 import {useRouter} from 'next/router';
 import {useEffect} from 'react';
 import {useRecoilCallback, useRecoilState} from 'recoil';
+import {currentGameAtom, gameListAtom, gamesAtomFamily} from '../game';
 import {userAtom} from '../user';
 import RelayWS from '../websockets';
 
@@ -31,7 +32,7 @@ export async function loginApi(
             throw data;
         }
     } catch (e) {
-        return new Error(e);
+        return new Error(String(e));
     }
 }
 
@@ -58,7 +59,7 @@ async function indexApi(): Promise<IndexResponse | Error> {
             throw data;
         }
     } catch (e) {
-        return new Error(e);
+        return new Error(String(e));
     }
 }
 
@@ -75,7 +76,7 @@ async function logoutApi(): Promise<string | Error> {
     try {
         return await res.json();
     } catch (e) {
-        return new Error(e);
+        return new Error(String(e));
     }
 }
 
@@ -110,10 +111,18 @@ export default function useRequiresLogin() {
 
 export function useLogoutHandler() {
     const router = useRouter();
-    return useRecoilCallback(({reset}) => async () => {
+    return useRecoilCallback(({reset, snapshot}) => async () => {
         await logoutApi();
         RelayWS.ws?.close();
+
         reset(userAtom);
+        const gameList = await snapshot.getPromise(gameListAtom);
+        for (let id in gameList) {
+            reset(gamesAtomFamily(id));
+        }
+        reset(gameListAtom);
+        reset(currentGameAtom);
+
         router.push('/login');
     });
 }

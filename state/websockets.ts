@@ -8,7 +8,8 @@ type ListenerEvent =
     | '/join_game_success'
     | '/player_joined'
     | '/start_game'
-    | '/replenish';
+    | '/replenish'
+    | '/alert';
 export default class RelayWS {
     static ws: WebSocket | null = null;
     static listeners: Map<string, (p: string) => void> = new Map();
