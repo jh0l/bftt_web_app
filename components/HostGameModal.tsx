@@ -1,5 +1,5 @@
 import {useRouter} from 'next/router';
-import {useCallback, useEffect, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {useRecoilValue} from 'recoil';
 import {useAlerts} from '../state/alerts';
 import {gamesAtomFamily} from '../state/game';
@@ -12,6 +12,7 @@ export default function GameModal() {
     const [name, setNameRaw] = useState('');
     const [go, setGo] = useState(false);
     const gameInfo = useRecoilValue(gamesAtomFamily(name));
+    const inputRef = useRef<HTMLInputElement>(null);
     const newGame = useCallback(async () => {
         setGo(true);
         if (name) {
@@ -30,7 +31,7 @@ export default function GameModal() {
         }
     }, [gameInfo, router, name, pusher, go]);
     return (
-        <>
+        <div className="form-control">
             <label
                 htmlFor="host-game-modal"
                 className="btn btn-primary modal-button"
@@ -41,6 +42,7 @@ export default function GameModal() {
                 type="checkbox"
                 id="host-game-modal"
                 className="modal-toggle"
+                onClick={() => setTimeout(() => inputRef.current?.focus(), 100)}
             />
             <div className="modal">
                 <div className="modal-box indicator">
@@ -66,6 +68,7 @@ export default function GameModal() {
                                 </label>
                                 <div className="flex space-x-2">
                                     <input
+                                        ref={inputRef}
                                         type="text"
                                         placeholder="Game ID"
                                         className="w-full input input-primary input-bordered"
@@ -86,6 +89,6 @@ export default function GameModal() {
                     </div>
                 </div>
             </div>
-        </>
+        </div>
     );
 }
