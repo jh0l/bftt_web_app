@@ -112,16 +112,15 @@ export default function useRequiresLogin() {
 export function useLogoutHandler() {
     const router = useRouter();
     return useRecoilCallback(({reset, snapshot}) => async () => {
+        RelayWS.close();
         await logoutApi();
-        RelayWS.ws?.close();
-
-        reset(userAtom);
         const gameList = await snapshot.getPromise(gameListAtom);
         for (let id in gameList) {
             reset(gamesAtomFamily(id));
         }
         reset(gameListAtom);
         reset(currentGameAtom);
+        reset(userAtom);
 
         router.push('/login');
     });

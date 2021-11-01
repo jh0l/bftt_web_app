@@ -52,7 +52,7 @@ function LogoutButton() {
     const logout = useLogoutHandler();
     return (
         <li>
-            <a onClick={logout}>logout</a>
+            <a onClick={() => logout()}>logout</a>
         </li>
     );
 }

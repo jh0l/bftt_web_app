@@ -14,7 +14,6 @@ export default function GamePage() {
     const {game_id} = router.query;
     const game_id_str = typeof game_id == 'string' ? game_id : '';
     const gameInfo = useRecoilValue(gamesAtomFamily(game_id_str));
-    console.log(gameInfo);
     useEffect(() => {
         if (!gameInfo) {
             router.push('/');

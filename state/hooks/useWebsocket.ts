@@ -84,7 +84,7 @@ export default function useWebsocket() {
             pusher({msg: hF(s), type: 'error'})
         );
         RelayWS.addListener('/login', (s) => console.log(s));
-        RelayWS.addListener('/logout', () => logout());
+        RelayWS.addListener('/logout', logout);
         RelayWS.addListener('/host_game_success', updateGame(GUp.Conn));
         RelayWS.addListener('/join_game_success', updateGame(GUp.Conn));
         RelayWS.addListener('/player_joined', updateGame(GUp.Updt));
