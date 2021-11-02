@@ -17,7 +17,7 @@ function loginHandler(msg: string) {
     const [_, loginStr] = splitCmd(msg);
     const login = JSON.parse(loginStr) as {token: string; alert: string};
     const token = login.token;
-    
+    RelayWS.sessionKey = token;
 }
 
 export function useConnectGameHandler() {

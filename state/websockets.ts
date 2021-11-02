@@ -16,6 +16,7 @@ type ListenerEvent =
 export default class RelayWS {
     static listeners: Map<string, (p: string) => void> = new Map();
     static verifyId: NodeJS.Timeout;
+    static sessionKey: string;
 
     static connect(
         identity: {user_id: string; password: string},
@@ -32,10 +33,10 @@ export default class RelayWS {
         ws.onmessage = ({data}: {data: string}) => {
             callback && callback();
             const [command] = splitCmd(data);
-            if (command === '/login') RelayWS.verifySession();
             const handler = RelayWS.listeners.get(command);
             if (handler) handler(data);
             else console.log('unhandled ws message: ', data);
+            if (command === '/login') RelayWS.verifySession();
         };
         ws.onclose = () => {
             ws = null;
@@ -55,7 +56,7 @@ export default class RelayWS {
         clearTimeout(RelayWS.verifyId);
         RelayWS.verifyId = setTimeout(() => {
             if (!ws) return;
-            ws.send('/verify');
+            ws.send(`/verify ${RelayWS.sessionKey}`);
             RelayWS.verifySession();
         }, 3333);
     }
