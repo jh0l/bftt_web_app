@@ -13,6 +13,13 @@ import {
 import RelayWS from '../websockets';
 import {useLogoutHandler} from './useLogin';
 
+function loginHandler(msg: string) {
+    const [_, loginStr] = splitCmd(msg);
+    const login = JSON.parse(loginStr) as {token: string; alert: string};
+    const token = login.token;
+    
+}
+
 export function useConnectGameHandler() {
     return useRecoilCallback(({set}) => (msg: string) => {
         const [_, gameStr] = splitCmd(msg);
@@ -83,7 +90,7 @@ export default function useWebsocket() {
         RelayWS.addListener('/error', (s) =>
             pusher({msg: hF(s), type: 'error'})
         );
-        RelayWS.addListener('/login', (s) => console.log(s));
+        RelayWS.addListener('/login', loginHandler);
         RelayWS.addListener('/logout', logout);
         RelayWS.addListener('/host_game_success', updateGame(GUp.Conn));
         RelayWS.addListener('/join_game_success', updateGame(GUp.Conn));
