@@ -11,12 +11,17 @@ type ListenerEvent =
     | '/join_game_success'
     | '/player_joined'
     | '/start_game'
+    | '/user_status'
     | '/replenish'
     | '/alert';
 export default class RelayWS {
+    static WS_OPEN = false;
+    static AUTHED = false;
     static listeners: Map<string, (p: string) => void> = new Map();
     static verifyId: NodeJS.Timeout;
     static sessionKey: string;
+    static onOpenQueue: (() => void)[] = [];
+    static onAuthQueue: (() => void)[] = [];
 
     static connect(
         identity: {user_id: string; password: string},
@@ -26,9 +31,11 @@ export default class RelayWS {
             throw new Error('WS_ADDRESS not defined');
         ws = new WebSocket(WS_ADDRESS);
         ws.onopen = () => {
+            RelayWS.WS_OPEN = true;
             console.log('WS connected');
             if (!ws) throw Error('uninitialised');
             ws.send(`/login ${JSON.stringify(identity)}`);
+            RelayWS.sendOnOpenQueue();
         };
         ws.onmessage = ({data}: {data: string}) => {
             callback && callback();
@@ -36,9 +43,13 @@ export default class RelayWS {
             const handler = RelayWS.listeners.get(command);
             if (handler) handler(data);
             else console.log('unhandled ws message: ', data);
-            if (command === '/login') RelayWS.verifySession();
+            if (command === '/login') {
+                RelayWS.verifySession();
+                RelayWS.sendOnAuthQueue();
+            }
         };
         ws.onclose = () => {
+            RelayWS.WS_OPEN = false;
             ws = null;
         };
     }
@@ -52,11 +63,36 @@ export default class RelayWS {
         RelayWS.listeners.set(command, listener);
     }
 
+    static queueOnOpen(func: () => void, authRequired = false) {
+        if (
+            RelayWS.WS_OPEN &&
+            (!authRequired || (authRequired && RelayWS.AUTHED))
+        )
+            func();
+        else if (!authRequired) {
+            RelayWS.onOpenQueue.push(func);
+        } else {
+            RelayWS.onAuthQueue.push(func);
+        }
+    }
+
+    static sendOnOpenQueue() {
+        for (let func of RelayWS.onOpenQueue) {
+            func();
+        }
+    }
+
+    static sendOnAuthQueue() {
+        for (let func of RelayWS.onAuthQueue) {
+            func();
+        }
+    }
+
     static verifySession() {
+        if (!ws) return;
+        ws.send(`/verify ${RelayWS.sessionKey}`);
         clearTimeout(RelayWS.verifyId);
         RelayWS.verifyId = setTimeout(() => {
-            if (!ws) return;
-            ws.send(`/verify ${RelayWS.sessionKey}`);
             RelayWS.verifySession();
         }, 3333);
     }
@@ -74,5 +110,10 @@ export default class RelayWS {
     static sendStartGame(gameId: string) {
         if (!ws) throw Error('uninitialised');
         ws.send('/start_game ' + gameId);
+    }
+
+    static sendUserStatus() {
+        if (!ws) throw Error('uninitialised');
+        ws.send('/user_status');
     }
 }

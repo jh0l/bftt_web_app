@@ -1,17 +1,17 @@
 import Head from 'next/head';
-import {useRecoilValue} from 'recoil';
 import HostGameModal from '../components/HostGameModal';
 import useRequiresLogin from '../state/hooks/useLogin';
-import {userAtom} from '../state/user';
 import JoinGameInput from '../components/JoinGameInput';
+import UserStatus from '../components/UserStatus';
+import Spinner from '../components/svg/Spinner';
 
 export default function Home() {
-    useRequiresLogin();
-    const user = useRecoilValue(userAtom);
+    const user = useRequiresLogin();
+    if (!user) return <Spinner size={10} />;
     return (
         <>
             <Head>
-                <title>BFTT: {user?.user_id}</title>
+                <title>BFTT: {user.user_id}</title>
                 <meta
                     name="description"
                     content="A turn based social deduction game"
@@ -34,6 +34,7 @@ export default function Home() {
                         <br></br>
                         <div className="divider">OR</div>
                         <JoinGameInput />
+                        <UserStatus />
                     </div>
                 </div>
             </main>

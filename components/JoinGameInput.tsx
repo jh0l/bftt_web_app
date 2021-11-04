@@ -6,28 +6,16 @@ import {gamesAtomFamily} from '../state/game';
 import RelayWS from '../state/websockets';
 
 export default function JoinGameInput() {
-    const router = useRouter();
     const {pusher} = useAlerts();
-    const [name, setNameRaw] = useState('');
-    const [go, setGo] = useState(false);
-    const gameInfo = useRecoilValue(gamesAtomFamily(name));
+    const [name, setName] = useState('');
     const joinGame = useCallback(async () => {
-        setGo(true);
         if (name) {
             RelayWS.sendJoinGame(name);
         } else {
             pusher({msg: 'Game name required', type: 'error'});
         }
     }, [name, pusher]);
-    const setName = (v: string) => {
-        setGo(false);
-        setNameRaw(v);
-    };
-    useEffect(() => {
-        if (gameInfo && go) {
-            router.push(`/game/${name}`);
-        }
-    }, [gameInfo, router, name, pusher, go]);
+    // useUpdateGameHandler navigates user to game page in 'game_join_success'
     return (
         <div className="form-control">
             <label className="label">

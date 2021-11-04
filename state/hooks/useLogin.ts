@@ -15,16 +15,16 @@ export async function loginApi(
     pw: string
 ): Promise<LoginResponse | Error> {
     console.log(process.env.API_ADDRESS);
-    const res = await fetch(process.env.API_ADDRESS + 'login', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-        },
-        body: JSON.stringify({user_id: name, password: pw}),
-        credentials: 'include',
-    });
     try {
+        let res = await fetch(process.env.API_ADDRESS + 'login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+            },
+            body: JSON.stringify({user_id: name, password: pw}),
+            credentials: 'include',
+        });
         const data = (await res.json()) as LoginResponse;
         if (res.ok) {
             return data;
@@ -107,6 +107,7 @@ export default function useRequiresLogin() {
             });
         }
     }, [user, router, setUser]);
+    return user;
 }
 
 export function useLogoutHandler() {
