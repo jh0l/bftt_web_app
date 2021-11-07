@@ -7,11 +7,10 @@ import Spinner from '../components/svg/Spinner';
 
 export default function Home() {
     const user = useRequiresLogin();
-    if (!user) return <Spinner size={10} />;
     return (
         <>
             <Head>
-                <title>BFTT: {user.user_id}</title>
+                <title>BFTT: {user?.user_id || ''}</title>
                 <meta
                     name="description"
                     content="A turn based social deduction game"
@@ -30,11 +29,19 @@ export default function Home() {
                             fugiat ut assumenda excepturi exercitationem quasi.
                             In deleniti eaque aut repudiandae et a id nisi.
                         </p>
-                        <HostGameModal />
-                        <br></br>
-                        <div className="divider">OR</div>
-                        <JoinGameInput />
-                        <UserStatus />
+                        {user ? (
+                            <>
+                                <HostGameModal />
+                                <br></br>
+                                <div className="divider">OR</div>
+                                <JoinGameInput />
+                                <UserStatus />
+                            </>
+                        ) : (
+                            <>
+                                <Spinner />
+                            </>
+                        )}
                     </div>
                 </div>
             </main>

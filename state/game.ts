@@ -1,10 +1,4 @@
-import {
-    atom,
-    atomFamily,
-    selector,
-    selectorFamily,
-    useRecoilValue,
-} from 'recoil';
+import {atom, atomFamily, selectorFamily} from 'recoil';
 import {userAtom} from './user';
 
 export interface Pos {
@@ -15,12 +9,13 @@ export interface Pos {
 export interface Player {
     user_id: string;
     lives: number;
-    moves: number;
+    action_points: number;
     pos: Pos;
     range: number;
 }
 
 export type GamePhase = 'Init' | 'InProg' | 'End';
+export type Board = Array<Array<string | null>>;
 
 export interface Game {
     phase: GamePhase;
@@ -28,7 +23,15 @@ export interface Game {
     host_user_id: string;
     players: {[key: string]: Player};
     turn_time_secs: number;
-    board: Array<Array<string | null>>;
+    board: Board;
+    turn_end_unix: number;
+}
+
+export interface GameStats {
+    phase: GamePhase;
+    game_id: string;
+    host_user_id: string;
+    turn_time_secs: number;
     turn_end_unix: number;
 }
 
@@ -37,11 +40,30 @@ export interface GamePlayers {
     players: {[key: string]: Player};
 }
 
-type MoveType = {Attack: Pos} | {Move: Pos} | {Give: Pos} | {Hover: Pos};
+interface AttackAction {
+    target_user_id: string;
+    lives_effect: number;
+}
+interface GiveAction {
+    target_user_id: string;
+}
+export interface MoveAction {
+    pos: Pos;
+}
+export type ActionType =
+    | {AttackAction: AttackAction}
+    | {GiveAction: GiveAction}
+    | {MoveAction: MoveAction};
 
-export interface PlayerMove {
-    user_id: String;
-    move_type: MoveType;
+export interface PlayerAction {
+    user_id: string;
+    game_id: string;
+    action: ActionType;
+}
+
+export interface PlayerActionEvent {
+    op: PlayerAction;
+    phase: GamePhase | null;
 }
 
 export const currentGameAtom = atom<null | string>({
@@ -59,6 +81,22 @@ export const gamesAtomFamily = atomFamily<null | Game, string>({
     default: null,
 });
 
+export const gamePlayerIdsAtomFamily = atomFamily<null | string[], string>({
+    key: 'game_player_ids',
+    default: null,
+});
+
+type GamePlayer = {game_id: string; user_id: string};
+export const gamePlayersAtomFamily = atomFamily<null | Player, GamePlayer>({
+    key: 'game_players',
+    default: null,
+});
+
+export const gameBoardAtomFamily = atomFamily<null | Board, string>({
+    key: 'game_board',
+    default: null,
+});
+
 const boardTileAtomFamily = atomFamily<
     string | null,
     {game_id: string; x: number; y: number; user_id: string}
@@ -67,7 +105,8 @@ const boardTileAtomFamily = atomFamily<
     default: null,
 });
 
-export const boardTileAtomSelectorFamily = selectorFamily<
+// convience selectorFamily for inferring the current game
+export const boardTileByUserFamily = selectorFamily<
     string | null,
     {x: number; y: number; game_id: string}
 >({

@@ -1,6 +1,5 @@
 import Head from 'next/head';
 import {useRouter} from 'next/router';
-import {useEffect} from 'react';
 import {useRecoilValue} from 'recoil';
 import {Game as GameState, gamesAtomFamily} from '../../state/game';
 import useRequiresLogin from '../../state/hooks/useLogin';
@@ -14,11 +13,10 @@ export default function GamePage() {
     const {game_id} = router.query;
     const game_id_str = typeof game_id == 'string' ? game_id : '';
     const gameInfo = useRecoilValue(gamesAtomFamily(game_id_str));
-    useEffect(() => {
-        if (!gameInfo) {
-            router.push('/');
-        }
-    }, [gameInfo, router]);
+    if (!gameInfo) {
+        // TODO Player must have navigated to GamePage by URL directly, load user and game
+        return "We're suppose to load the game through std GET request here";
+    }
     return (
         <Content
             game_id={game_id}

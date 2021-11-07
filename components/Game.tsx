@@ -4,6 +4,8 @@ import RelayWS from '../state/websockets';
 import {strColor} from '../lib/colors';
 import {useEffect, useMemo, useRef} from 'react';
 import {Tile} from './Tile';
+import {useRecoilValue} from 'recoil';
+import {userAtom} from '../state/user';
 
 export function Board({game}: {game: GameState}) {
     const len = game.board.length;
@@ -69,14 +71,24 @@ export default function Game({game}: {game: GameState}) {
 }
 
 function Sidebar({game}: {game: GameState}) {
+    const userId = useRecoilValue(userAtom);
     return (
         <div className="flex flex-col gap-2 mx-6 w-72">
             <h1 className="m-5 text-4xl font-bold">{game.game_id}</h1>
             <div className="divider">
                 {Object.keys(game.players).length} Players
             </div>
-            <div className="shadow" style={{overflow: 'hidden'}}>
-                <div className={'stat bg-' + strColor(game.host_user_id)}>
+            <div className="shadow visible">
+                <div
+                    className={
+                        'indicator stat bg-' + strColor(game.host_user_id)
+                    }
+                >
+                    {game.host_user_id === userId?.user_id && (
+                        <div className="indicator-item badge badge-primary">
+                            💻
+                        </div>
+                    )}
                     <div className="stat-figure text-neutral">• • •</div>
                     <div className="stat-title text-black">Host</div>
                     <div className="text-black font-bold">
@@ -88,7 +100,12 @@ function Sidebar({game}: {game: GameState}) {
                 .filter(([k]) => k != game.host_user_id)
                 .map(([id]) => (
                     <div className="shadow" key={id}>
-                        <div className={'stat bg-' + strColor(id)}>
+                        <div className={'indicator stat bg-' + strColor(id)}>
+                            {id === userId?.user_id && (
+                                <div className="indicator-item badge badge-primary">
+                                    💻
+                                </div>
+                            )}
                             <div className="stat-figure text-neutral">
                                 • • •
                             </div>

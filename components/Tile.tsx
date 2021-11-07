@@ -1,23 +1,25 @@
 import {
-    boardTileAtomSelectorFamily,
+    boardTileByUserFamily,
     gamesAtomFamily,
     Player,
+    PlayerAction,
 } from '../state/game';
 import {strColor} from '../lib/colors';
 import {useRecoilValue} from 'recoil';
 import styles from './Tile.module.css';
 import {useState} from 'react';
 import {userAtom} from '../state/user';
+import RelayWS from '../state/websockets';
 
-function PlayerTile({playerId, game_id}: {playerId: string; game_id: string}) {
+function PlayerTile({user_id, game_id}: {user_id: string; game_id: string}) {
     const gameData = useRecoilValue(gamesAtomFamily(game_id));
-    const player = gameData?.players[playerId];
+    const player = gameData?.players[user_id];
     if (gameData && player) {
         return (
             <div
                 className={
-                    'p-1 w-full h-full rounded-lg flex justify-center items-center absolute ' +
-                    ('shadow-md z-10 bg-' + strColor(playerId))
+                    'select-none p-1 w-full h-full rounded-lg flex justify-center items-center absolute ' +
+                    ('shadow-md z-10 bg-' + strColor(user_id))
                 }
                 style={{
                     top: '50%',
@@ -37,7 +39,7 @@ function PlayerTile({playerId, game_id}: {playerId: string; game_id: string}) {
                     <div
                         className={'text-black font-bold ' + styles['ts-tile']}
                     >
-                        {playerId}
+                        {user_id}
                     </div>
                     <div
                         className={
@@ -45,7 +47,7 @@ function PlayerTile({playerId, game_id}: {playerId: string; game_id: string}) {
                             styles['ts-tile']
                         }
                     >
-                        <span className="px-1">{player.moves}</span>
+                        <span className="px-1">{player.action_points}</span>
                         <img alt="Action Token" src="/ActionToken.png"></img>
                     </div>
                     <div
@@ -67,7 +69,7 @@ function PlayerTile({playerId, game_id}: {playerId: string; game_id: string}) {
 function inGridRange(player: Player, {x, y}: {x: number; y: number}) {
     const xRes = player.pos.x - x;
     const yRes = player.pos.y - y;
-    const range = Math.min(player.range || 2, player.moves);
+    const range = Math.min(player.range || 2, player.action_points);
     if (xRes <= range && xRes >= -range) {
         if (yRes <= range && yRes >= -range) {
             return true;
@@ -76,7 +78,7 @@ function inGridRange(player: Player, {x, y}: {x: number; y: number}) {
     return false;
 }
 
-function HoverAction({
+function MoveAction({
     xy,
     game_id,
 }: {
@@ -84,29 +86,35 @@ function HoverAction({
     game_id: string;
 }) {
     const user_id = useRecoilValue(userAtom)?.user_id;
-    const player = useRecoilValue(gamesAtomFamily(game_id))?.players[
-        user_id || ''
-    ];
-    if (player && inGridRange(player, xy))
+    const game = useRecoilValue(gamesAtomFamily(game_id));
+    const player = game?.players[user_id || ''];
+    const handleAction = () =>
+        user_id
+            ? RelayWS.sendPlayerAction({
+                  user_id,
+                  game_id,
+                  action: {MoveAction: {pos: {x: xy.x, y: xy.y}}},
+              })
+            : console.warn('user not loaded');
+
+    if (
+        user_id &&
+        ((player && inGridRange(player, xy)) || game?.phase === 'Init')
+    )
         return (
             <div
+                onClick={handleAction}
                 className={
-                    'w-full h-full flex justify-center items-center absolute cursor-pointer leading-none'
+                    'w-full h-full text-center flex justify-center items-center absolute inset-1/2 cursor-pointer select-none leading-none'
                 }
                 style={{
-                    top: '50%',
-                    left: '50%',
                     transform: 'translate(-50%, -50%)',
-                    backgroundColor: 'rgba(255,255,255,0.25)',
-                    borderRadius: '100%',
+                    backgroundColor: '#4141413b',
                 }}
-            >
-                move here
-            </div>
+            ></div>
         );
     return null;
 }
-
 export function Tile({
     i,
     len,
@@ -118,7 +126,7 @@ export function Tile({
 }) {
     const x = i % len;
     const y = Math.floor(i / len);
-    const v = useRecoilValue(boardTileAtomSelectorFamily({x, y, game_id}));
+    const v = useRecoilValue(boardTileByUserFamily({x, y, game_id}));
     const [isHover, setHover] = useState(false);
     return (
         <div
@@ -131,9 +139,9 @@ export function Tile({
                     : ' bg-gray-400')
             }
         >
-            {v && <PlayerTile playerId={v} game_id={game_id} />}
+            {v && <PlayerTile user_id={v} game_id={game_id} />}
             {isHover && v === null && (
-                <HoverAction xy={{x, y}} game_id={game_id} />
+                <MoveAction xy={{x, y}} game_id={game_id} />
             )}
         </div>
     );

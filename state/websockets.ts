@@ -1,4 +1,5 @@
 import {splitCmd} from '.';
+import {ActionType, PlayerAction} from './game';
 const WS_ADDRESS = process.env.WS_ADDRESS;
 
 let ws: WebSocket | null = null;
@@ -13,6 +14,7 @@ type ListenerEvent =
     | '/start_game'
     | '/user_status'
     | '/replenish'
+    | '/player_action'
     | '/alert';
 export default class RelayWS {
     static WS_OPEN = false;
@@ -23,10 +25,7 @@ export default class RelayWS {
     static onOpenQueue: (() => void)[] = [];
     static onAuthQueue: (() => void)[] = [];
 
-    static connect(
-        identity: {user_id: string; password: string},
-        callback?: () => void
-    ) {
+    static connect(identity: {user_id: string; password: string}) {
         if (typeof WS_ADDRESS != 'string')
             throw new Error('WS_ADDRESS not defined');
         ws = new WebSocket(WS_ADDRESS);
@@ -35,17 +34,17 @@ export default class RelayWS {
             console.log('WS connected');
             if (!ws) throw Error('uninitialised');
             ws.send(`/login ${JSON.stringify(identity)}`);
-            RelayWS.sendOnOpenQueue();
+            RelayWS.sendOpenQueue();
         };
         ws.onmessage = ({data}: {data: string}) => {
-            callback && callback();
-            const [command] = splitCmd(data);
+            const [command, payload] = splitCmd(data);
             const handler = RelayWS.listeners.get(command);
-            if (handler) handler(data);
+            if (handler) handler(payload);
             else console.log('unhandled ws message: ', data);
             if (command === '/login') {
+                RelayWS.AUTHED = true;
                 RelayWS.verifySession();
-                RelayWS.sendOnAuthQueue();
+                RelayWS.sendAuthQueue();
             }
         };
         ws.onclose = () => {
@@ -63,7 +62,15 @@ export default class RelayWS {
         RelayWS.listeners.set(command, listener);
     }
 
-    static queueOnOpen(func: () => void, authRequired = false) {
+    static addJsonListener<T>(
+        command: ListenerEvent,
+        listener: (p: T) => void
+    ) {
+        // TODO handle parsing errors
+        RelayWS.listeners.set(command, (str) => listener(JSON.parse(str)));
+    }
+
+    static queueSend(func: () => void, authRequired = false) {
         if (
             RelayWS.WS_OPEN &&
             (!authRequired || (authRequired && RelayWS.AUTHED))
@@ -76,13 +83,13 @@ export default class RelayWS {
         }
     }
 
-    static sendOnOpenQueue() {
+    static sendOpenQueue() {
         for (let func of RelayWS.onOpenQueue) {
             func();
         }
     }
 
-    static sendOnAuthQueue() {
+    static sendAuthQueue() {
         for (let func of RelayWS.onAuthQueue) {
             func();
         }
@@ -115,5 +122,10 @@ export default class RelayWS {
     static sendUserStatus() {
         if (!ws) throw Error('uninitialised');
         ws.send('/user_status');
+    }
+
+    static sendPlayerAction(action: PlayerAction) {
+        if (!ws) throw Error('ununitialised');
+        ws.send('/player_action ' + JSON.stringify(action));
     }
 }
