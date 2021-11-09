@@ -36,6 +36,22 @@ module.exports = {
                 140: '52rem',
                 150: '39rem',
             },
+            animation: {
+                'bounce-once': 'bounceonce 0.1s ease-out 1',
+            },
+            keyframes: {
+                bounceonce: {
+                    '0%, 100%': {
+                        transform: 'translate(-50%, -50%)',
+                    },
+                    '25%': {
+                        transform: 'translate(-50%, -55%)',
+                    },
+                    '75%': {
+                        transform: 'translate(-52%, -50%)',
+                    },
+                },
+            },
         },
     },
     variants: {

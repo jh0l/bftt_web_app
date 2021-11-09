@@ -1,40 +1,33 @@
 import Head from 'next/head';
 import {useRouter} from 'next/router';
 import {useRecoilValue} from 'recoil';
-import {Game as GameState, gamesAtomFamily} from '../../state/game';
+import {
+    gamePlayerIdsAtomFamily,
+    GameStats,
+    gameStatsAtomFamily,
+} from '../../state/game';
 import useRequiresLogin from '../../state/hooks/useLogin';
 import Game from '../../components/Game';
-import {userAtom} from '../../state/user';
 
 export default function GamePage() {
     useRequiresLogin();
     const router = useRouter();
-    const user = useRecoilValue(userAtom);
     const {game_id} = router.query;
     const game_id_str = typeof game_id == 'string' ? game_id : '';
-    const gameInfo = useRecoilValue(gamesAtomFamily(game_id_str));
-    if (!gameInfo) {
+    const gameStats = useRecoilValue(gameStatsAtomFamily(game_id_str));
+    if (!gameStats)
         // TODO Player must have navigated to GamePage by URL directly, load user and game
         return "We're suppose to load the game through std GET request here";
-    }
-    return (
-        <Content
-            game_id={game_id}
-            gameInfo={gameInfo}
-            userId={user?.user_id || null}
-        />
-    );
+
+    if (typeof game_id != 'string')
+        return 'invalid game ID: ' + JSON.stringify(game_id);
+
+    return <Content game_id={game_id} />;
 }
 
-export function Content({
-    game_id,
-    gameInfo,
-    userId,
-}: {
-    game_id: string | string[] | undefined;
-    gameInfo: GameState | null;
-    userId: string | null;
-}) {
+export function Content({game_id}: {game_id: string}) {
+    const gameStats = useRecoilValue(gameStatsAtomFamily(game_id));
+    const playerIds = useRecoilValue(gamePlayerIdsAtomFamily(game_id));
     return (
         <>
             <Head>
@@ -46,8 +39,8 @@ export function Content({
                 <link rel="icon" href="/favicon.ico" />
             </Head>
             {/* <div className="max-h-full flex flex-1 justify-center overflow-scroll"> */}
-            {gameInfo && userId ? (
-                <Game game={gameInfo} />
+            {game_id && gameStats && playerIds ? (
+                <Game gameStats={gameStats} playerIds={playerIds} />
             ) : (
                 <div>{game_id} not found</div>
             )}

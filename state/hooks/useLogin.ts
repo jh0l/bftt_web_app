@@ -1,7 +1,12 @@
 import {useRouter} from 'next/router';
 import {useEffect} from 'react';
 import {useRecoilCallback, useRecoilState} from 'recoil';
-import {currentGameAtom, gameListAtom, gamesAtomFamily} from '../game';
+import {
+    currentGameAtom,
+    gameListAtom,
+    gamePlayerIdsAtomFamily,
+    gameStatsAtomFamily,
+} from '../game';
 import {userAtom} from '../user';
 import RelayWS from '../websockets';
 
@@ -115,9 +120,12 @@ export function useLogoutHandler() {
     return useRecoilCallback(({reset, snapshot}) => async () => {
         RelayWS.close();
         await logoutApi();
+        const release = snapshot.retain();
         const gameList = await snapshot.getPromise(gameListAtom);
+        release();
         for (let id in gameList) {
-            reset(gamesAtomFamily(id));
+            reset(gameStatsAtomFamily(id));
+            reset(gamePlayerIdsAtomFamily(id));
         }
         reset(gameListAtom);
         reset(currentGameAtom);

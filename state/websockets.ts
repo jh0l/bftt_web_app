@@ -39,6 +39,7 @@ export default class RelayWS {
         ws.onmessage = ({data}: {data: string}) => {
             const [command, payload] = splitCmd(data);
             const handler = RelayWS.listeners.get(command);
+            console.log(command);
             if (handler) handler(payload);
             else console.log('unhandled ws message: ', data);
             if (command === '/login') {

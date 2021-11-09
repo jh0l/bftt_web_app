@@ -8,8 +8,11 @@ import {
     Game,
     GamePlayers,
     gameListAtom,
-    gamesAtomFamily,
-    PlayerActionEvent,
+    gamePlayerIdsAtomFamily,
+    PlayerActionResponse,
+    gamePlayersAtomFamily,
+    gameStatsAtomFamily,
+    GameStats,
 } from '../game';
 import {UserStatus, userStatusAtom} from '../user';
 import RelayWS from '../websockets';
@@ -32,21 +35,34 @@ export function useUpdateGameHandler(router?: NextRouter) {
         ({set}) =>
             (updateType: GUp = GUp.Conn) =>
             (game: Game) => {
-                const game_id = game.game_id;
+                const {game_id, players, board} = game;
+                const playerIdList = Object.keys(players);
+                // set new game and player list
                 if (updateType === GUp.Conn) {
                     set(gameListAtom, (v) => [...v, game_id]);
                     set(currentGameAtom, game_id);
                     router?.push(`/game/${game_id}`);
                 }
-                set(gamesAtomFamily(game_id), game);
-                let y = 0;
-                for (let row of game.board) {
-                    let x = 0;
-                    for (let tile of row) {
-                        set(boardTileByUserFamily({x, y, game_id}), tile);
-                        x += 1;
-                    }
-                    y += 1;
+                // set game stats
+                set(gameStatsAtomFamily(game_id), {
+                    game_id,
+                    phase: game.phase,
+                    host_user_id: game.host_user_id,
+                    turn_time_secs: game.turn_time_secs,
+                    turn_end_unix: game.turn_end_unix,
+                    size: game.board.size,
+                });
+                // set players
+                set(gamePlayerIdsAtomFamily(game_id), playerIdList);
+                for (let player of Object.values(players)) {
+                    const {user_id} = player;
+                    set(gamePlayersAtomFamily({game_id, user_id}), player);
+                }
+                for (let [k, v] of Object.entries(board.map)) {
+                    console.log(k);
+                    let [x, y] = k.split(',').map(Number);
+                    console.log(x, y);
+                    set(boardTileByUserFamily({x, y, game_id}), v);
                 }
             }
     );
@@ -54,16 +70,13 @@ export function useUpdateGameHandler(router?: NextRouter) {
 
 function useGamePlayersHandler() {
     return useRecoilCallback(({set}) => (game: GamePlayers) => {
-        const game_id = game.game_id;
-        set(gamesAtomFamily(game_id), (currentGame) => {
-            if (currentGame) {
-                const newGame = {...currentGame};
-                newGame.players = game.players;
-                return newGame;
-            }
-            console.warn('player update to uninitialised game ignored');
-            return currentGame;
-        });
+        const {game_id, players} = game;
+        const playerIdList = Object.keys(players);
+        set(gamePlayerIdsAtomFamily(game_id), playerIdList);
+        for (let player of Object.values(players)) {
+            const {user_id} = player;
+            set(gamePlayersAtomFamily({game_id, user_id}), player);
+        }
     });
 }
 
@@ -75,36 +88,38 @@ function useUserStatusHandler() {
 
 function usePlayerActionHandler() {
     return useRecoilCallback(
-        ({set, snapshot}) =>
-            async ({op, phase}: PlayerActionEvent) => {
-                const {game_id, user_id} = op;
-                const game = await snapshot.getPromise(
-                    gamesAtomFamily(game_id)
-                );
-                if (!game) return game;
-                const update = {...game};
-                const action = op.action;
-                if ('AttackAction' in action) {
-                } else if ('GiveAction' in action) {
-                } else if ('MoveAction' in action) {
-                    // apply move
-                    if (update.phase == 'InProg')
-                        update.players[user_id].action_points -= 1;
+        ({set}) =>
+            async ({game_id, user_id, phase, action}: PlayerActionResponse) => {
+                if ('Attack' in action) {
+                } else if ('Give' in action) {
+                } else if ('Move' in action) {
                     {
                         // remove current position
-                        const {x, y} = update.players[user_id].pos;
-                        set(boardTileByUserFamily({game_id, x, y}), null);
+                        const {x, y} = action.Move.from;
+                        set(boardTileByUserFamily({x, y, game_id}), null);
                     }
                     {
                         // add new position
-                        let {x, y} = action.MoveAction.pos;
-                        set(boardTileByUserFamily({game_id, x, y}), user_id);
+                        let {x, y} = action.Move.to;
+                        set(boardTileByUserFamily({x, y, game_id}), user_id);
                     }
-                    if (phase) update.phase = phase;
-                    // update position of player on player list
-                    update.players[user_id].pos = action.MoveAction.pos;
+                    // update game phase
+                    set(gameStatsAtomFamily(game_id), (g) => {
+                        if (!g) throw Error('game uninitialized');
+                        return {...g, phase};
+                    });
+                    // update player points and position
+                    set(gamePlayersAtomFamily({user_id, game_id}), (p) => {
+                        if (!p) throw Error('player uninitialized');
+                        const up = {...p};
+                        if (phase == 'InProg')
+                            up.action_points = p.action_points - 1;
+                        up.pos = action.Move.to;
+                        return up;
+                    });
+                } else {
+                    throw Error('unhandled action ' + action);
                 }
-                set(gamesAtomFamily(op.game_id), update);
             }
     );
 }
@@ -129,5 +144,12 @@ export default function useWebsocket() {
         RelayWS.addJsonListener('/replenish', updatePlayers);
         RelayWS.addJsonListener('/player_action', updatePlayerAction);
         RelayWS.addListener('/alert', (s) => pusher({msg: s}));
-    }, [pusher, logout, updateGame, updatePlayers]);
+    }, [
+        pusher,
+        logout,
+        updateGame,
+        updatePlayers,
+        updateUserStatus,
+        updatePlayerAction,
+    ]);
 }

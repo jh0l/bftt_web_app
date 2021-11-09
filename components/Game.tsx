@@ -1,5 +1,5 @@
 import Settings from './svg/Settings';
-import {Game as GameState} from '../state/game';
+import {GameStats} from '../state/game';
 import RelayWS from '../state/websockets';
 import {strColor} from '../lib/colors';
 import {useEffect, useMemo, useRef} from 'react';
@@ -7,16 +7,12 @@ import {Tile} from './Tile';
 import {useRecoilValue} from 'recoil';
 import {userAtom} from '../state/user';
 
-export function Board({game}: {game: GameState}) {
-    const len = game.board.length;
-    useEffect(() => {});
+export function Board({gameStats: {size, game_id}}: {gameStats: GameStats}) {
     const tileMap = useMemo(() => {
-        return Array(len * len)
+        return Array(size * size)
             .fill(0)
-            .map((_, i) => (
-                <Tile key={i} i={i} len={len} game_id={game.game_id} />
-            ));
-    }, [len, game]);
+            .map((_, i) => <Tile key={i} i={i} len={size} game_id={game_id} />);
+    }, [size, game_id]);
     return (
         <div
             className="shadow-2xl"
@@ -24,7 +20,7 @@ export function Board({game}: {game: GameState}) {
                 margin: '0 auto',
                 boxSizing: 'border-box',
                 display: 'grid',
-                gridTemplateColumns: `repeat(${len}, 1fr)`,
+                gridTemplateColumns: `repeat(${size}, 1fr)`,
                 gridTemplateRows: `auto`,
             }}
         >
@@ -59,32 +55,42 @@ function Sizer({children}: {children: JSX.Element}) {
     );
 }
 
-export default function Game({game}: {game: GameState}) {
+export default function Game({
+    gameStats,
+    playerIds,
+}: {
+    gameStats: GameStats;
+    playerIds: string[];
+}) {
     return (
         <div className="flex flex-grow flex-col lg:flex-row justify-center items-center">
             <Sizer>
-                <Board game={game} />
+                <Board gameStats={gameStats} />
             </Sizer>
-            <Sidebar game={game} />
+            <Sidebar gameStats={gameStats} playerIds={playerIds} />
         </div>
     );
 }
 
-function Sidebar({game}: {game: GameState}) {
+function Sidebar({
+    gameStats,
+    playerIds,
+}: {
+    gameStats: GameStats;
+    playerIds: string[];
+}) {
     const userId = useRecoilValue(userAtom);
     return (
         <div className="flex flex-col gap-2 mx-6 w-72">
-            <h1 className="m-5 text-4xl font-bold">{game.game_id}</h1>
-            <div className="divider">
-                {Object.keys(game.players).length} Players
-            </div>
+            <h1 className="m-5 text-4xl font-bold">{gameStats.game_id}</h1>
+            <div className="divider">{playerIds.length} Players</div>
             <div className="shadow visible">
                 <div
                     className={
-                        'indicator stat bg-' + strColor(game.host_user_id)
+                        'indicator stat bg-' + strColor(gameStats.host_user_id)
                     }
                 >
-                    {game.host_user_id === userId?.user_id && (
+                    {gameStats.host_user_id === userId?.user_id && (
                         <div className="indicator-item badge badge-primary">
                             💻
                         </div>
@@ -92,13 +98,13 @@ function Sidebar({game}: {game: GameState}) {
                     <div className="stat-figure text-neutral">• • •</div>
                     <div className="stat-title text-black">Host</div>
                     <div className="text-black font-bold">
-                        {game.host_user_id || <pre> </pre>}
+                        {gameStats.host_user_id || <pre> </pre>}
                     </div>
                 </div>
             </div>
-            {Object.entries(game.players)
-                .filter(([k]) => k != game.host_user_id)
-                .map(([id]) => (
+            {playerIds
+                .filter((k) => k != gameStats.host_user_id)
+                .map((id) => (
                     <div className="shadow" key={id}>
                         <div className={'indicator stat bg-' + strColor(id)}>
                             {id === userId?.user_id && (
@@ -122,22 +128,24 @@ function Sidebar({game}: {game: GameState}) {
                         <Settings />
                     </div>
                     <div className="stat-desc">Time per turn</div>
-                    <div className="stat-value">{game.turn_time_secs} secs</div>
+                    <div className="stat-value">
+                        {gameStats.turn_time_secs} secs
+                    </div>
                 </div>
             </div>
-            <GamePhase game={game} />
+            <GamePhase gameStats={gameStats} />
         </div>
     );
 }
 
-function GamePhase({game}: {game: GameState}) {
+function GamePhase({gameStats}: {gameStats: GameStats}) {
     const startGame = () => {
-        RelayWS.sendStartGame(game.game_id);
+        RelayWS.sendStartGame(gameStats.game_id);
     };
     return (
         <>
             <div className="divider"></div>
-            {game.phase == 'Init' && (
+            {gameStats.phase == 'Init' && (
                 <button
                     className="btn btn-block btn-primary"
                     onClick={startGame}
@@ -145,7 +153,7 @@ function GamePhase({game}: {game: GameState}) {
                     Play
                 </button>
             )}
-            {game.phase == 'InProg' && (
+            {gameStats.phase == 'InProg' && (
                 <h1 className="m-5 text-3xl font-bold">{'<Clock />'}</h1>
             )}
         </>

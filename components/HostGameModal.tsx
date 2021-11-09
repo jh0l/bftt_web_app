@@ -2,7 +2,7 @@ import {useRouter} from 'next/router';
 import {useCallback, useEffect, useRef, useState} from 'react';
 import {useRecoilValue} from 'recoil';
 import {useAlerts} from '../state/alerts';
-import {gamesAtomFamily} from '../state/game';
+import {gameStatsAtomFamily} from '../state/game';
 import RelayWS from '../state/websockets';
 import X from './svg/X';
 
@@ -11,7 +11,7 @@ export default function GameModal() {
     const {pusher} = useAlerts();
     const [name, setNameRaw] = useState('');
     const [go, setGo] = useState(false);
-    const gameInfo = useRecoilValue(gamesAtomFamily(name));
+    const gameInfo = useRecoilValue(gameStatsAtomFamily(name));
     const inputRef = useRef<HTMLInputElement>(null);
     const newGame = useCallback(async () => {
         setGo(true);

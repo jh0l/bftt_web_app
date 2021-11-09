@@ -1,8 +1,5 @@
-import {useRouter} from 'next/router';
-import {useCallback, useEffect, useState} from 'react';
-import {useRecoilValue} from 'recoil';
+import {useCallback, useState} from 'react';
 import {useAlerts} from '../state/alerts';
-import {gamesAtomFamily} from '../state/game';
 import RelayWS from '../state/websockets';
 
 export default function JoinGameInput() {

@@ -15,7 +15,10 @@ export interface Player {
 }
 
 export type GamePhase = 'Init' | 'InProg' | 'End';
-export type Board = Array<Array<string | null>>;
+export type Board = {
+    map: Record<string, string>;
+    size: number;
+};
 
 export interface Game {
     phase: GamePhase;
@@ -28,11 +31,12 @@ export interface Game {
 }
 
 export interface GameStats {
-    phase: GamePhase;
     game_id: string;
+    phase: GamePhase;
     host_user_id: string;
     turn_time_secs: number;
     turn_end_unix: number;
+    size: number;
 }
 
 export interface GamePlayers {
@@ -51,9 +55,9 @@ export interface MoveAction {
     pos: Pos;
 }
 export type ActionType =
-    | {AttackAction: AttackAction}
-    | {GiveAction: GiveAction}
-    | {MoveAction: MoveAction};
+    | {Attack: AttackAction}
+    | {Give: GiveAction}
+    | {Move: MoveAction};
 
 export interface PlayerAction {
     user_id: string;
@@ -61,9 +65,21 @@ export interface PlayerAction {
     action: ActionType;
 }
 
-export interface PlayerActionEvent {
-    op: PlayerAction;
-    phase: GamePhase | null;
+export interface MoveActionEvent {
+    from: Pos;
+    to: Pos;
+}
+
+export type ActionTypeEvent =
+    | {Attack: AttackAction}
+    | {Give: GiveAction}
+    | {Move: MoveActionEvent};
+
+export interface PlayerActionResponse {
+    user_id: string;
+    game_id: string;
+    action: ActionTypeEvent;
+    phase: GamePhase;
 }
 
 export const currentGameAtom = atom<null | string>({
@@ -76,24 +92,25 @@ export const gameListAtom = atom<string[]>({
     default: [],
 });
 
-export const gamesAtomFamily = atomFamily<null | Game, string>({
-    key: 'games_v1',
-    default: null,
-});
+// export const gamesAtomFamily = atomFamily<null | Game, string>({
+//     key: 'games_v1',
+//     default: null,
+// });
 
+// List of IDs of all players for a game, for indexing gamePlayersAtomFamily
 export const gamePlayerIdsAtomFamily = atomFamily<null | string[], string>({
-    key: 'game_player_ids',
+    key: 'game_player_ids_v1',
     default: null,
 });
 
-type GamePlayer = {game_id: string; user_id: string};
-export const gamePlayersAtomFamily = atomFamily<null | Player, GamePlayer>({
-    key: 'game_players',
+export const gameStatsAtomFamily = atomFamily<null | GameStats, string>({
+    key: 'game_stats_v1',
     default: null,
 });
 
-export const gameBoardAtomFamily = atomFamily<null | Board, string>({
-    key: 'game_board',
+type PlayerInd = {game_id: string; user_id: string};
+export const gamePlayersAtomFamily = atomFamily<null | Player, PlayerInd>({
+    key: 'game_players_v1',
     default: null,
 });
 
@@ -101,7 +118,7 @@ const boardTileAtomFamily = atomFamily<
     string | null,
     {game_id: string; x: number; y: number; user_id: string}
 >({
-    key: 'boardTileAtomFamily',
+    key: 'board_tiles_v1',
     default: null,
 });
 
@@ -110,7 +127,7 @@ export const boardTileByUserFamily = selectorFamily<
     string | null,
     {x: number; y: number; game_id: string}
 >({
-    key: 'boardTileSelectorFamily',
+    key: 'board_tiles_by_users_v1',
     get:
         ({x, y, game_id}: {x: number; y: number; game_id: string}) =>
         ({get}) => {
