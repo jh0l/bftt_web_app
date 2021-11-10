@@ -57,6 +57,7 @@ export default class RelayWS {
     static close() {
         if (!ws) throw Error('uninitialised');
         ws.close();
+        clearTimeout(RelayWS.verifyId);
     }
 
     static addListener(command: ListenerEvent, listener: (p: string) => void) {

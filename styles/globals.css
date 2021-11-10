@@ -2,31 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+    display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+}
+
 .grid-item::before {
     content: '';
     display: block;
     padding-top: 100%;
 }
 
-.popover {
-    @apply invisible absolute;
-}
-
-.active.popover {
-    @apply visible z-50;
-}
-
-.board-scale {
-    max-height: 100%;
-}
-
-.btn-tile {
-    height: 100%;
-    width: 100%;
-}
-
-.btn-tile {
-    min-height: auto;
+.translate-center {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 html,

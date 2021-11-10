@@ -14,10 +14,11 @@ class MyDocument extends Document {
 
     render() {
         return (
-            <Html data-theme="dark">
+            <Html data-theme="dark" className="bg-base-200">
                 <Head />
                 <body>
                     <Main />
+                    <div id="portal-root" />
                     <NextScript />
                 </body>
             </Html>

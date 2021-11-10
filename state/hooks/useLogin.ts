@@ -7,7 +7,7 @@ import {
     gamePlayerIdsAtomFamily,
     gameStatsAtomFamily,
 } from '../game';
-import {userAtom} from '../user';
+import {userAtom, userStatusAtom} from '../user';
 import RelayWS from '../websockets';
 
 interface LoginResponse {
@@ -130,6 +130,7 @@ export function useLogoutHandler() {
         reset(gameListAtom);
         reset(currentGameAtom);
         reset(userAtom);
+        reset(userStatusAtom);
 
         router.push('/login');
     });

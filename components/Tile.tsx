@@ -6,59 +6,110 @@ import {
     Pos,
 } from '../state/game';
 import {strColor} from '../lib/colors';
-import {atom, useRecoilState, useRecoilValue} from 'recoil';
+import {useRecoilValue} from 'recoil';
 import styles from './Tile.module.css';
-import React, {useEffect, useRef, useState} from 'react';
+import React, {DOMElement, ReactNode, useRef, useState} from 'react';
 import {userAtom} from '../state/user';
 import RelayWS from '../state/websockets';
+import Portal from './Portal';
 
+function PlayerAction({user_id}: {user_id: string}) {
+    const user = useRecoilValue(userAtom);
+    if (user?.user_id == user_id)
+        return (
+            <ul
+                tabIndex={0}
+                className="menu rounded-lg grid grid-col-2 gap-1 z-50"
+            >
+                <li>
+                    <button className="btn btn-sm">upgrade</button>
+                </li>
+                <li>
+                    <button className="btn-info btn btn-sm ">give</button>
+                </li>
+                <li>
+                    <button className="btn-success btn btn-sm ">move</button>
+                </li>
+            </ul>
+        );
+    return (
+        <div
+            // style={{transform: 'translateY(20%)'}}
+            tabIndex={0}
+            className="menu rounded-lg"
+        >
+            <div className="flex direction-row gap-1">
+                <div>
+                    <button className="btn-error btn btn-sm ">attack</button>
+                </div>
+            </div>
+        </div>
+    );
+}
+const btnRef: React.RefObject<HTMLDivElement> = React.createRef();
 function PlayerTile({user_id, game_id}: {user_id: string; game_id: string}) {
     const player = useRecoilValue(gamePlayersAtomFamily({game_id, user_id}));
+    const user = useRecoilValue(userAtom);
+    const [isOn, setOn] = useState(false);
+    const [coords, setCoords] = useState({});
+    const updateTooltipCoords = (el: HTMLDivElement | null) => {
+        const rect = el?.getBoundingClientRect();
+        if (rect) {
+            setCoords({
+                left: (rect.x + rect.width) | 2,
+                top: rect.y + window.scrollY,
+            });
+        }
+    };
     if (player) {
         return (
             <div
-                className={
-                    'animate-bounce-once select-none p-1 w-full h-full rounded-lg flex justify-center items-center absolute ' +
-                    ('shadow-md z-10 bg-' + strColor(user_id))
-                }
-                style={{
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%)',
+                ref={btnRef}
+                onMouseEnter={(e) => {
+                    updateTooltipCoords(e.target as HTMLDivElement);
+                    setOn(true);
                 }}
+                onMouseLeave={() => {
+                    setOn(false);
+                }}
+                className="overflow-visible rounded-lg translate-center flex justify-center items-center absolute w-full h-full"
             >
                 <div
                     className={
-                        'w-full h-full rounded-md flex justify-center items-center flex-col leading-none text-sm ' +
-                        styles['centeroverflow']
+                        'indicator translate-center flex justify-center items-center absolute w-5/6 h-5/6 animate-bounce-once select-none p-1 rounded-lg ' +
+                        ('shadow-md z-10 bg-' + strColor(user_id))
                     }
-                    style={{
-                        backgroundColor: 'rgba(255,255,255,0.48)',
-                    }}
                 >
+                    {player?.user_id == user?.user_id && (
+                        <div className="indicator-item indicator-start badge badge-primary">
+                            💻
+                        </div>
+                    )}
                     <div
-                        className={'text-black font-bold ' + styles['ts-tile']}
-                    >
-                        {user_id}
-                    </div>
-                    <div
+                        tabIndex={0}
                         className={
-                            'flex justify-center items-center flex-row text-black font-bold ' +
-                            styles['ts-tile']
+                            'w-full h-full rounded-md flex justify-center items-center flex-col leading-none text-sm ' +
+                            styles['centeroverflow']
                         }
+                        style={{
+                            backgroundColor: '#ffffff67',
+                        }}
                     >
-                        <span className="px-1">{player.action_points}</span>
-                        <img alt="Action Token" src="/ActionToken.png"></img>
+                        <div
+                            className={
+                                'text-black font-bold ' + styles['ts-tile']
+                            }
+                        >
+                            {user_id}
+                        </div>
                     </div>
-                    <div
-                        className={
-                            'flex justify-center items-center flex-row text-black font-bold ' +
-                            styles['ts-tile']
-                        }
-                    >
-                        <span className="px-1">{player.lives}</span>
-                        <img alt="Health Points" src="/Heart.png"></img>
-                    </div>
+                    {isOn && (
+                        <Portal>
+                            <div className="absolute" style={coords}>
+                                <PlayerAction user_id={user_id} />
+                            </div>
+                        </Portal>
+                    )}
                 </div>
             </div>
         );
@@ -141,7 +192,7 @@ export function Tile({
             onMouseEnter={() => setHover(true)}
             onMouseLeave={() => setHover(false)}
             className={
-                'grid-item relative ' +
+                'overflow-visible grid-item relative ' +
                 ((Math.floor(i / len) + i) % 2 == 0
                     ? ' bg-gray-500'
                     : ' bg-gray-400')

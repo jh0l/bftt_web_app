@@ -8,6 +8,7 @@ import {
 } from '../../state/game';
 import useRequiresLogin from '../../state/hooks/useLogin';
 import Game from '../../components/Game';
+import {userAtom} from '../../state/user';
 
 export default function GamePage() {
     useRequiresLogin();
@@ -28,10 +29,13 @@ export default function GamePage() {
 export function Content({game_id}: {game_id: string}) {
     const gameStats = useRecoilValue(gameStatsAtomFamily(game_id));
     const playerIds = useRecoilValue(gamePlayerIdsAtomFamily(game_id));
+    const user = useRecoilValue(userAtom);
     return (
         <>
             <Head>
-                <title>BFTT: {game_id || ''}</title>
+                <title>
+                    {user?.user_id || 'BFTT'}: {game_id || ''}
+                </title>
                 <meta
                     name="description"
                     content="A turn based social deduction game"
