@@ -9,6 +9,7 @@ export function GameSettings({gameStats}: {gameStats: GameStats}) {
     const startGame = () => {
         RelayWS.sendStartGame(gameStats.game_id);
     };
+    const user = useRecoilValue(userAtom);
     return (
         <>
             {gameStats.phase == 'Init' && (
@@ -25,13 +26,17 @@ export function GameSettings({gameStats}: {gameStats: GameStats}) {
                             </div>
                         </div>
                     </div>
-                    <div className="divider"></div>
-                    <button
-                        className="btn btn-block btn-primary"
-                        onClick={startGame}
-                    >
-                        Play
-                    </button>
+                    {user?.user_id === gameStats.host_user_id && (
+                        <>
+                            <div className="divider"></div>
+                            <button
+                                className="btn btn-block btn-primary"
+                                onClick={startGame}
+                            >
+                                Play
+                            </button>
+                        </>
+                    )}
                 </>
             )}
             {gameStats.phase == 'InProg' && (
@@ -99,15 +104,7 @@ function PlayerListItem({
                 <div className="text-black font-bold">
                     {playerId || <pre></pre>}
                 </div>
-                {/* <div className="stat-desc opacity-100 text-black grid grid-cols-2 gap-2 w-28">
-                    <span className="px-1 bg-gray-300 bg-opacity-40 rounded-md">
-                        <img
-                            className="inline pr-1"
-                            alt="Action Points"
-                            src="/ActionToken.png"
-                        ></img>
-                        {player?.action_points}
-                    </span>
+                <div className="stat-desc opacity-100 text-black flex flex-row gap-1 w-28">
                     <span className="px-1 bg-gray-300 bg-opacity-40 rounded-md">
                         <img
                             className="inline pr-1"
@@ -116,7 +113,15 @@ function PlayerListItem({
                         ></img>
                         {player?.lives}
                     </span>
-                </div> */}
+                    <span className="px-1 bg-gray-300 bg-opacity-40 rounded-md">
+                        <img
+                            className="inline pr-1"
+                            alt="Action Points"
+                            src="/ActionToken.png"
+                        ></img>
+                        {player?.action_points}
+                    </span>
+                </div>
                 <div className="stat-figure text-neutral">• • •</div>
             </div>
         </div>

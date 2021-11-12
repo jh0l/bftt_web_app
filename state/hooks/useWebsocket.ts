@@ -12,7 +12,6 @@ import {
     PlayerActionResponse,
     gamePlayersAtomFamily,
     gameStatsAtomFamily,
-    GameStats,
 } from '../game';
 import {UserStatus, userStatusAtom} from '../user';
 import RelayWS from '../websockets';

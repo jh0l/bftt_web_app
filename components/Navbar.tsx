@@ -61,7 +61,7 @@ export default function Navbar() {
     const user = useRecoilValue(userAtom);
     if (!user) return null;
     return (
-        <div className="navbar min-h-8 h-8 shadow-lg bg-neutral text-neutral-content">
+        <div className="navbar min-h-8 h-8 shadow-lg bg-base-100">
             <div className="px-2 mx-2 sm:inline-block md:flex-none">
                 <div className="dropdown">
                     <div tabIndex={0} className="m-1 link font-bold text-lg">

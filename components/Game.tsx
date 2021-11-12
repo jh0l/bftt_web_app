@@ -1,6 +1,5 @@
 import {GameStats} from '../state/game';
-import RelayWS from '../state/websockets';
-import {useEffect, useMemo, useRef} from 'react';
+import {useLayoutEffect, useMemo, useRef} from 'react';
 import {Tile} from './Tile';
 import GameSidebar from './GameSidebar';
 
@@ -11,17 +10,19 @@ export function Board({gameStats: {size, game_id}}: {gameStats: GameStats}) {
             .map((_, i) => <Tile key={i} i={i} len={size} game_id={game_id} />);
     }, [size, game_id]);
     return (
-        <div
-            className="shadow-2xl"
-            style={{
-                margin: '0 auto',
-                boxSizing: 'border-box',
-                display: 'grid',
-                gridTemplateColumns: `repeat(${size}, 1fr)`,
-                gridTemplateRows: `auto`,
-            }}
-        >
-            {tileMap}
+        <div className="px-3">
+            <div
+                className="shadow-2xl"
+                style={{
+                    margin: '0 auto',
+                    boxSizing: 'border-box',
+                    display: 'grid',
+                    gridTemplateColumns: `repeat(${size}, 1fr)`,
+                    gridTemplateRows: `auto`,
+                }}
+            >
+                {tileMap}
+            </div>
         </div>
     );
 }
@@ -32,34 +33,30 @@ function sizeDivisible(source: number, divisor: number) {
     return source - (source % divisor);
 }
 
-function Sizer({
-    children,
-    boardSize = 18,
-}: {
-    children: JSX.Element;
-    boardSize?: number;
-}) {
+function Sizer({children, divisor}: {children: JSX.Element; divisor: number}) {
     const ref = useRef<HTMLDivElement>(null);
     const resizeListener = () => {
         requestAnimationFrame(() => {
-            if (ref.current) {
+            if (ref.current && parent) {
                 let {width, height} = document.body.getBoundingClientRect();
-                height = height;
                 const sizeDirty = Math.min(width, height) - 20;
-                const size = sizeDivisible(sizeDirty, boardSize) + 'px';
+                const size = sizeDivisible(sizeDirty, divisor) + 'px';
                 ref.current.setAttribute('style', 'width: 1px; height: 1px');
                 ref.current.style.height = size;
                 ref.current.style.width = size;
             }
         });
     };
-    useEffect(() => {
+    useLayoutEffect(() => {
         resizeListener();
         window.addEventListener('resize', resizeListener);
         return () => window.removeEventListener('resize', resizeListener);
     });
     return (
-        <div style={{margin: '0 auto'}} ref={ref}>
+        <div
+            // style={{ margin: '0 auto' }}
+            ref={ref}
+        >
             {children}
         </div>
     );
@@ -73,11 +70,11 @@ export default function Game({
     playerIds: string[];
 }) {
     return (
-        <div className="flex flex-grow flex-col lg:flex-row justify-center items-center lg:items-start">
-            <Sizer>
+        <div className="flex flex-grow flex-col-reverse lg:flex-row-reverse justify-center items-center lg:items-start">
+            <GameSidebar gameStats={gameStats} playerIds={playerIds} />
+            <Sizer divisor={gameStats.size}>
                 <Board gameStats={gameStats} />
             </Sizer>
-            <GameSidebar gameStats={gameStats} playerIds={playerIds} />
         </div>
     );
 }
