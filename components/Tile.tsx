@@ -8,13 +8,7 @@ import {
 import {strColor} from '../lib/colors';
 import {useRecoilValue} from 'recoil';
 import styles from './Tile.module.css';
-import React, {
-    useCallback,
-    useEffect,
-    useLayoutEffect,
-    useRef,
-    useState,
-} from 'react';
+import React, {useCallback, useLayoutEffect, useRef, useState} from 'react';
 import {User, userAtom} from '../state/user';
 import RelayWS from '../state/websockets';
 import Portal from './Portal';
@@ -53,10 +47,19 @@ function PlayerOverlay({
                     </li>
                 </ul>
             );
+        const attackHandler = () =>
+            RelayWS.sendPlayerAction({
+                action: {Attack: {lives_effect: -1, target_user_id: user_id}},
+                game_id,
+                user_id,
+            });
         return (
             <ul className="menu rounded-lg grid grid-col-2 gap-1 z-50">
                 <li>
-                    <button className="btn btn-xs btn-outline btn-error">
+                    <button
+                        className="btn btn-xs btn-outline btn-error"
+                        onMouseDown={attackHandler}
+                    >
                         attack
                     </button>
                 </li>
@@ -68,27 +71,30 @@ function PlayerOverlay({
             </ul>
         );
     }
-    const lives = player.lives > 99 ? '99+' : player.lives;
-    const points = player.action_points > 99 ? '99+' : player.action_points;
-    return (
-        <div
-            className="flex flex-row absolute translate-center"
-            style={{top: 16}}
-        >
-            <div className="badge badge-xs">
-                {lives}
-                <img className="pl-0.5" src="/Heart.png" alt="lives"></img>
+    if (gameStats.phase === 'InProg') {
+        const lives = player.lives > 99 ? '99+' : player.lives;
+        const points = player.action_points > 99 ? '99+' : player.action_points;
+        return (
+            <div
+                className="flex flex-row absolute translate-center"
+                style={{top: 16}}
+            >
+                <div className="badge badge-xs">
+                    {lives}
+                    <img className="pl-0.5" src="/Heart.png" alt="lives"></img>
+                </div>
+                <div className="badge badge-xs">
+                    {points}
+                    <img
+                        className="pl-0.5"
+                        src="/ActionToken.png"
+                        alt="action points"
+                    ></img>
+                </div>
             </div>
-            <div className="badge badge-xs">
-                {points}
-                <img
-                    className="pl-0.5"
-                    src="/ActionToken.png"
-                    alt="action points"
-                ></img>
-            </div>
-        </div>
-    );
+        );
+    }
+    return null;
 }
 function PlayerTile({user_id, game_id}: {user_id: string; game_id: string}) {
     const user = useRecoilValue(userAtom);
@@ -152,23 +158,23 @@ function PlayerTile({user_id, game_id}: {user_id: string; game_id: string}) {
                         {user_id}
                     </div>
                 </div>
-                <Portal>
-                    <div className="absolute" style={coords}>
-                        <div className="relative">
-                            <div className="absolute translate-center">
-                                {user && (
-                                    <PlayerOverlay
-                                        game_id={game_id}
-                                        user_id={user_id}
-                                        user={user}
-                                        isOn={isOn}
-                                    />
-                                )}
-                            </div>
+            </div>
+            <Portal>
+                <div className="absolute" style={coords}>
+                    <div className="relative">
+                        <div className="absolute translate-center">
+                            {user && (
+                                <PlayerOverlay
+                                    game_id={game_id}
+                                    user_id={user_id}
+                                    user={user}
+                                    isOn={isOn}
+                                />
+                            )}
                         </div>
                     </div>
-                </Portal>
-            </div>
+                </div>
+            </Portal>
         </div>
     );
 }
@@ -226,7 +232,9 @@ function MoveAction({
                     transform: 'translate(-50%, -50%)',
                     backgroundColor: '#4141413b',
                 }}
-            ></div>
+            >
+                <span className="opacity-10">move</span>
+            </div>
         );
     return null;
 }

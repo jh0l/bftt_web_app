@@ -12,6 +12,7 @@ export function GameSettings({gameStats}: {gameStats: GameStats}) {
     const user = useRecoilValue(userAtom);
     return (
         <>
+            <h2 className="xl">{gameStats.phase}</h2>
             {gameStats.phase == 'Init' && (
                 <>
                     <div className="divider">Settings</div>

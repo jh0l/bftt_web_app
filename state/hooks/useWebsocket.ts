@@ -86,10 +86,40 @@ function useUserStatusHandler() {
 }
 
 function usePlayerActionHandler() {
+    const {pusher} = useAlerts();
     return useRecoilCallback(
         ({set}) =>
             async ({game_id, user_id, phase, action}: PlayerActionResponse) => {
                 if ('Attack' in action) {
+                    // update game phase
+                    set(gameStatsAtomFamily(game_id), (g) => {
+                        if (!g) throw Error('game uninitialized');
+                        return {...g, phase};
+                    });
+                    // update player action points
+                    set(gamePlayersAtomFamily({user_id, game_id}), (p) => {
+                        if (!p) throw Error('player uninitialized');
+                        const up = {...p};
+                        up.action_points -= 1;
+                        return up;
+                    });
+                    // update target lives
+                    set(
+                        gamePlayersAtomFamily({
+                            user_id: action.Attack.target_user_id,
+                            game_id,
+                        }),
+                        (p) => {
+                            if (!p) throw Error('player uninitialized');
+                            const up = {...p};
+                            up.lives = up.lives + action.Attack.lives_effect;
+                            return up;
+                        }
+                    );
+                    if (phase == 'End') {
+                        pusher({msg: 'Game Over', type: 'info'});
+                        pusher({msg: user_id + ' won!', type: 'success'});
+                    }
                 } else if ('Give' in action) {
                 } else if ('Move' in action) {
                     {
