@@ -35,43 +35,65 @@ function PlayerOverlay({
     if (
         isOn &&
         gameStats.phase === 'InProg' &&
+        userPlayer.lives > 0 &&
+        player.lives > 0 &&
         inRange(userPlayer, player.pos)
     ) {
-        if (user.user_id === player.user_id)
+        if (user.user_id === player.user_id) {
+            const disabled = userPlayer.action_points < 3 ? ' disable' : '';
             return (
                 <ul className="menu rounded-lg grid grid-col-2 gap-1 z-50">
                     <li>
-                        <button className="btn btn-xs btn-outline btn-info">
+                        <button
+                            className={
+                                'btn btn-xs btn-outline btn-info' + disabled
+                            }
+                        >
                             upgrade
                         </button>
                     </li>
                 </ul>
             );
+        }
         const attackHandler = () =>
             RelayWS.sendPlayerAction({
                 action: {Attack: {lives_effect: -1, target_user_id: user_id}},
                 game_id,
                 user_id,
             });
+        const giveHandler = () =>
+            RelayWS.sendPlayerAction({
+                action: {Give: {target_user_id: user_id}},
+                game_id,
+                user_id,
+            });
+        const disabled = userPlayer.action_points < 1 ? ' disable' : '';
         return (
             <ul className="menu rounded-lg grid grid-col-2 gap-1 z-50">
                 <li>
                     <button
-                        className="btn btn-xs btn-outline btn-error"
-                        onMouseDown={attackHandler}
+                        className={
+                            'btn btn-xs btn-outline btn-error' + disabled
+                        }
+                        onMouseUp={attackHandler}
                     >
                         attack
                     </button>
                 </li>
                 <li>
-                    <button className="btn btn-xs btn-outline btn-success">
+                    <button
+                        className={
+                            'btn btn-xs btn-outline btn-success' + disabled
+                        }
+                        onMouseUp={giveHandler}
+                    >
                         give
                     </button>
                 </li>
             </ul>
         );
     }
-    if (gameStats.phase === 'InProg') {
+    if (gameStats.phase !== 'Init') {
         const lives = player.lives > 99 ? '99+' : player.lives;
         const points = player.action_points > 99 ? '99+' : player.action_points;
         return (
@@ -220,7 +242,9 @@ function MoveAction({
 
     if (
         user_id &&
-        ((userPlayer && inRange(userPlayer, xy)) || gameStats?.phase === 'Init')
+        gameStats?.phase !== 'End' &&
+        userPlayer &&
+        inRange(userPlayer, xy)
     )
         return (
             <div

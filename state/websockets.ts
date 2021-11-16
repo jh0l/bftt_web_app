@@ -133,7 +133,7 @@ export default class RelayWS {
     }
 
     static sendPlayerAction(action: PlayerAction) {
-        if (!ws) throw Error('ununitialised');
+        if (!ws) throw Error('uninitialised');
         ws.send('/player_action ' + JSON.stringify(action));
     }
 }

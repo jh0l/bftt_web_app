@@ -121,6 +121,26 @@ function usePlayerActionHandler() {
                         pusher({msg: user_id + ' won!', type: 'success'});
                     }
                 } else if ('Give' in action) {
+                    // update player action points
+                    set(gamePlayersAtomFamily({user_id, game_id}), (p) => {
+                        if (!p) throw Error('player uninitialized');
+                        const up = {...p};
+                        up.action_points -= 1;
+                        return up;
+                    });
+                    // update target action points
+                    set(
+                        gamePlayersAtomFamily({
+                            user_id: action.Give.target_user_id,
+                            game_id,
+                        }),
+                        (p) => {
+                            if (!p) throw Error('player uninitialized');
+                            const up = {...p};
+                            up.action_points += 1;
+                            return up;
+                        }
+                    );
                 } else if ('Move' in action) {
                     {
                         // remove current position
