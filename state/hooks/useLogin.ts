@@ -1,6 +1,7 @@
 import {useRouter} from 'next/router';
 import {useEffect} from 'react';
 import {useRecoilCallback, useRecoilState} from 'recoil';
+import {useAlerts} from '../alerts';
 import {
     currentGameAtom,
     gameListAtom,
@@ -48,15 +49,15 @@ interface IndexResponse {
 
 async function indexApi(): Promise<IndexResponse | Error> {
     if (typeof process.env.API_ADDRESS != 'string') throw Error('bad');
-    const res = await fetch(process.env.API_ADDRESS, {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-        },
-        credentials: 'include',
-    });
     try {
+        const res = await fetch(process.env.API_ADDRESS, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+            },
+            credentials: 'include',
+        });
         const data = (await res.json()) as IndexResponse;
         if (res.ok) {
             return data;
@@ -70,15 +71,15 @@ async function indexApi(): Promise<IndexResponse | Error> {
 
 async function logoutApi(): Promise<string | Error> {
     if (typeof process.env.API_ADDRESS != 'string') throw Error('bad');
-    const res = await fetch(process.env.API_ADDRESS + 'logout', {
-        method: 'GET',
-        headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-        },
-        credentials: 'include',
-    });
     try {
+        const res = await fetch(process.env.API_ADDRESS + 'logout', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+            },
+            credentials: 'include',
+        });
         return await res.json();
     } catch (e) {
         return new Error(String(e));
@@ -86,12 +87,14 @@ async function logoutApi(): Promise<string | Error> {
 }
 
 export default function useRequiresLogin() {
+    const {pusher} = useAlerts();
     const [user, setUser] = useRecoilState(userAtom);
     const router = useRouter();
     useEffect(() => {
         if (user == null) {
             indexApi().then((res) => {
                 if (res instanceof Error) {
+                    pusher({msg: 'Failed to log in', type: 'error'});
                     console.log(res);
                 } else {
                     if (res.user_id != null && res.msg != null)
@@ -111,15 +114,19 @@ export default function useRequiresLogin() {
                 }
             });
         }
-    }, [user, router, setUser]);
+    }, [user, router, setUser, pusher]);
     return user;
 }
 
 export function useLogoutHandler() {
     const router = useRouter();
+    const {pusher} = useAlerts();
     return useRecoilCallback(({reset, snapshot}) => async () => {
         RelayWS.close();
-        await logoutApi();
+        const res = await logoutApi();
+        if (res instanceof Error) {
+            pusher({msg: 'failed to contact logout endpoint', type: 'error'});
+        }
         const release = snapshot.retain();
         const gameList = await snapshot.getPromise(gameListAtom);
         release();
