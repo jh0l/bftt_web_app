@@ -166,6 +166,15 @@ function usePlayerActionHandler() {
                         up.pos = action.Move.to;
                         return up;
                     });
+                } else if ('RangeUpgrade' in action) {
+                    // update player action points
+                    set(gamePlayersAtomFamily({user_id, game_id}), (p) => {
+                        if (!p) throw Error('player uninitialized');
+                        const up = {...p};
+                        up.range += 1;
+                        up.action_points -= 3;
+                        return up;
+                    });
                 } else {
                     throw Error('unhandled action ' + action);
                 }

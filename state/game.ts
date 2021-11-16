@@ -54,10 +54,14 @@ interface GiveAction {
 export interface MoveAction {
     pos: Pos;
 }
+export interface RangeUpgradeAction {
+    point_cost: number;
+}
 export type ActionType =
     | {Attack: AttackAction}
     | {Give: GiveAction}
-    | {Move: MoveAction};
+    | {Move: MoveAction}
+    | {RangeUpgrade: RangeUpgradeAction};
 
 export interface PlayerAction {
     user_id: string;
@@ -73,7 +77,8 @@ export interface MoveActionEvent {
 export type ActionTypeEvent =
     | {Attack: AttackAction}
     | {Give: GiveAction}
-    | {Move: MoveActionEvent};
+    | {Move: MoveActionEvent}
+    | {RangeUpgrade: RangeUpgradeAction};
 
 export interface PlayerActionResponse {
     user_id: string;

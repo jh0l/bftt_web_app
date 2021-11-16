@@ -40,6 +40,12 @@ function PlayerOverlay({
         inRange(userPlayer, player.pos)
     ) {
         if (user.user_id === player.user_id) {
+            const upgradeHandler = () =>
+                RelayWS.sendPlayerAction({
+                    action: {RangeUpgrade: {point_cost: 3}},
+                    game_id,
+                    user_id,
+                });
             const disabled = userPlayer.action_points < 3 ? ' disable' : '';
             return (
                 <ul className="menu rounded-lg grid grid-col-2 gap-1 z-50">
@@ -48,6 +54,7 @@ function PlayerOverlay({
                             className={
                                 'btn btn-xs btn-outline btn-info' + disabled
                             }
+                            onMouseUp={upgradeHandler}
                         >
                             upgrade
                         </button>
@@ -95,25 +102,48 @@ function PlayerOverlay({
     }
     if (gameStats.phase !== 'Init') {
         const lives = player.lives > 99 ? '99+' : player.lives;
-        const points = player.action_points > 99 ? '99+' : player.action_points;
+        const range = player.range > 99 ? '99+' : player.range;
+        const action_points: number | false =
+            player.user_id === user.user_id ? player.action_points : false;
         return (
-            <div
-                className="flex flex-row absolute translate-center"
-                style={{top: 16}}
-            >
-                <div className="badge badge-xs">
-                    {lives}
-                    <img className="pl-0.5" src="/Heart.png" alt="lives"></img>
+            <>
+                <div
+                    className="flex flex-row absolute translate-center"
+                    style={{top: 16}}
+                >
+                    <div className="badge badge-xs font-bold">
+                        <img
+                            className="pr-px"
+                            src="/Heart.png"
+                            alt="lives"
+                        ></img>
+                        <span className="pl-px">{lives}</span>
+                    </div>
+                    <div className="badge badge-xs font-bold">
+                        <img
+                            className="pr-0.5"
+                            src="/Range.png"
+                            alt="player range"
+                        ></img>
+                        {range}
+                    </div>
                 </div>
-                <div className="badge badge-xs">
-                    {points}
-                    <img
-                        className="pl-0.5"
-                        src="/ActionToken.png"
-                        alt="action points"
-                    ></img>
-                </div>
-            </div>
+                {action_points !== false && (
+                    <div
+                        className="flex flex-row absolute translate-center"
+                        style={{top: -16, left: -16.5}}
+                    >
+                        <div className="badge badge-xs badge-primary font-bold">
+                            <img
+                                className="pr-0.5"
+                                src="/ActionToken.png"
+                                alt="lives"
+                            ></img>
+                            {action_points}
+                        </div>
+                    </div>
+                )}
+            </>
         );
     }
     return null;
@@ -242,9 +272,9 @@ function MoveAction({
 
     if (
         user_id &&
-        gameStats?.phase !== 'End' &&
         userPlayer &&
-        inRange(userPlayer, xy)
+        (gameStats?.phase === 'Init' ||
+            (gameStats?.phase === 'InProg' && inRange(userPlayer, xy)))
     )
         return (
             <div

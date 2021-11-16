@@ -55,6 +55,8 @@ export default function GameSidebar({
     gameStats: GameStats;
     playerIds: string[];
 }) {
+    const user_id = useRecoilValue(userAtom)?.user_id;
+    if (!user_id) return null;
     return (
         <div className="flex flex-col gap-2 mx-6 w-72">
             <h1 className="m-5 text-4xl font-bold">{gameStats.game_id}</h1>
@@ -62,12 +64,23 @@ export default function GameSidebar({
             <div className="divider">{playerIds.length} Players</div>
             <div className="flex flex-col gap-2 w-72 max-h-full overflow-x-visible no-scrollbar">
                 <PlayerListItem
-                    playerId={gameStats.host_user_id}
+                    playerId={user_id}
                     gameStats={gameStats}
-                    isHost={true}
+                    showPoints
+                    isHost={gameStats.host_user_id == user_id}
                 />
+                <div className="divider"></div>
+                {user_id !== gameStats.host_user_id && (
+                    <PlayerListItem
+                        playerId={gameStats.host_user_id}
+                        gameStats={gameStats}
+                        isHost
+                    />
+                )}
                 {playerIds
-                    .filter((k) => k != gameStats.host_user_id)
+                    .filter(
+                        (k) => k !== gameStats.host_user_id && k !== user_id
+                    )
                     .map((id) => (
                         <PlayerListItem
                             playerId={id}
@@ -84,10 +97,12 @@ function PlayerListItem({
     playerId,
     gameStats,
     isHost = false,
+    showPoints,
 }: {
     playerId: string;
     gameStats: GameStats;
     isHost?: boolean;
+    showPoints?: boolean;
 }): JSX.Element {
     const userId = useRecoilValue(userAtom);
     const player = useRecoilValue(
@@ -106,7 +121,7 @@ function PlayerListItem({
                     {playerId || <pre></pre>}
                 </div>
                 <div className="stat-desc opacity-100 text-black flex flex-row gap-1 w-28">
-                    <span className="px-1 bg-gray-300 bg-opacity-40 rounded-md">
+                    <span className="px-1 bg-gray-200 bg-opacity-50 rounded-md font-bold">
                         <img
                             className="inline pr-1"
                             alt="Health Token"
@@ -114,14 +129,24 @@ function PlayerListItem({
                         ></img>
                         {player?.lives}
                     </span>
-                    <span className="px-1 bg-gray-300 bg-opacity-40 rounded-md">
+                    <span className="px-1 bg-gray-200 bg-opacity-50 rounded-md font-bold">
                         <img
-                            className="inline pr-1"
-                            alt="Action Points"
-                            src="/ActionToken.png"
+                            className="inline pr-1 pb-0.5"
+                            alt="player range"
+                            src="/Range.png"
                         ></img>
-                        {player?.action_points}
+                        {player?.range}
                     </span>
+                    {showPoints && (
+                        <span className="px-1 bg-gray-200 bg-opacity-50 rounded-md font-bold">
+                            <img
+                                className="inline pr-1 pb-0.5"
+                                alt="player range"
+                                src="/ActionToken.png"
+                            ></img>
+                            {player?.action_points}
+                        </span>
+                    )}
                 </div>
                 <div className="stat-figure text-neutral">• • •</div>
             </div>
