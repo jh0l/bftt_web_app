@@ -98,12 +98,18 @@ export default class RelayWS {
     }
 
     static verifySession() {
-        if (!ws) return;
-        ws.send(`/verify ${RelayWS.sessionKey}`);
-        clearTimeout(RelayWS.verifyId);
-        RelayWS.verifyId = setTimeout(() => {
-            RelayWS.verifySession();
-        }, 3333);
+        this.queueSend(() => {
+            if (!ws) return;
+            try {
+                ws.send(`/verify ${RelayWS.sessionKey}`);
+                clearTimeout(RelayWS.verifyId);
+                RelayWS.verifyId = setTimeout(() => {
+                    RelayWS.verifySession();
+                }, 3333);
+            } catch (e) {
+                console.log(e);
+            }
+        });
     }
 
     static sendHostGame(gameId: string) {

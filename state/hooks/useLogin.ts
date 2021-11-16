@@ -80,7 +80,7 @@ async function logoutApi(): Promise<string | Error> {
             },
             credentials: 'include',
         });
-        return await res.json();
+        return await res.text();
     } catch (e) {
         return new Error(String(e));
     }
@@ -125,6 +125,7 @@ export function useLogoutHandler() {
         RelayWS.close();
         const res = await logoutApi();
         if (res instanceof Error) {
+            console.log(res);
             pusher({msg: 'failed to contact logout endpoint', type: 'error'});
         }
         const release = snapshot.retain();
