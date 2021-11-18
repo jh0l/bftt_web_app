@@ -6,12 +6,12 @@ import {
     boardTileByUserFamily,
     currentGameAtom,
     Game,
-    GamePlayers,
     gameListAtom,
     gamePlayerIdsAtomFamily,
     PlayerActionResponse,
     gamePlayersAtomFamily,
     gameStatsAtomFamily,
+    Player,
 } from '../game';
 import {UserStatus, userStatusAtom} from '../user';
 import RelayWS from '../websockets';
@@ -67,16 +67,27 @@ export function useUpdateGameHandler(router?: NextRouter) {
     );
 }
 
-function useGamePlayersHandler() {
-    return useRecoilCallback(({set}) => (game: GamePlayers) => {
-        const {game_id, players} = game;
-        const playerIdList = Object.keys(players);
-        set(gamePlayerIdsAtomFamily(game_id), playerIdList);
-        for (let player of Object.values(players)) {
-            const {user_id} = player;
-            set(gamePlayersAtomFamily({game_id, user_id}), player);
-        }
+function useGamePlayerHandler() {
+    return useRecoilCallback(({set}) => (player: Player) => {
+        const {game_id, user_id} = player;
+        set(gamePlayerIdsAtomFamily(game_id), (x) => (x ? [...x, user_id] : x));
+        set(gamePlayersAtomFamily({game_id, user_id}), player);
     });
+}
+interface ActionPointUpdate {
+    user_id: string;
+    game_id: string;
+    action_points: number;
+}
+function useActionPointUpdateHandler() {
+    return useRecoilCallback(
+        ({set}) =>
+            ({user_id, game_id, action_points}: ActionPointUpdate) => {
+                set(gamePlayersAtomFamily({game_id, user_id}), (p) =>
+                    p ? {...p, action_points} : p
+                );
+            }
+    );
 }
 
 function useUserStatusHandler() {
@@ -96,13 +107,6 @@ function usePlayerActionHandler() {
                         if (!g) throw Error('game uninitialized');
                         return {...g, phase};
                     });
-                    // update player action points
-                    set(gamePlayersAtomFamily({user_id, game_id}), (p) => {
-                        if (!p) throw Error('player uninitialized');
-                        const up = {...p};
-                        up.action_points -= 1;
-                        return up;
-                    });
                     // update target lives
                     set(
                         gamePlayersAtomFamily({
@@ -121,26 +125,7 @@ function usePlayerActionHandler() {
                         pusher({msg: user_id + ' won!', type: 'success'});
                     }
                 } else if ('Give' in action) {
-                    // update player action points
-                    set(gamePlayersAtomFamily({user_id, game_id}), (p) => {
-                        if (!p) throw Error('player uninitialized');
-                        const up = {...p};
-                        up.action_points -= 1;
-                        return up;
-                    });
-                    // update target action points
-                    set(
-                        gamePlayersAtomFamily({
-                            user_id: action.Give.target_user_id,
-                            game_id,
-                        }),
-                        (p) => {
-                            if (!p) throw Error('player uninitialized');
-                            const up = {...p};
-                            up.action_points += 1;
-                            return up;
-                        }
-                    );
+                    console.log('???');
                 } else if ('Move' in action) {
                     {
                         // remove current position
@@ -161,8 +146,6 @@ function usePlayerActionHandler() {
                     set(gamePlayersAtomFamily({user_id, game_id}), (p) => {
                         if (!p) throw Error('player uninitialized');
                         const up = {...p};
-                        if (phase == 'InProg')
-                            up.action_points = p.action_points - 1;
                         up.pos = action.Move.to;
                         return up;
                     });
@@ -172,7 +155,6 @@ function usePlayerActionHandler() {
                         if (!p) throw Error('player uninitialized');
                         const up = {...p};
                         up.range += 1;
-                        up.action_points -= 3;
                         return up;
                     });
                 } else {
@@ -186,7 +168,8 @@ export default function useWebsocket() {
     const router = useRouter();
     const {pusher} = useAlerts();
     const updateGame = useUpdateGameHandler(router);
-    const updatePlayers = useGamePlayersHandler();
+    const updatePlayer = useGamePlayerHandler();
+    const updateAPU = useActionPointUpdateHandler();
     const updateUserStatus = useUserStatusHandler();
     const updatePlayerAction = usePlayerActionHandler();
     const logout = useLogoutHandler();
@@ -196,17 +179,18 @@ export default function useWebsocket() {
         RelayWS.addListener('/logout', logout);
         RelayWS.addJsonListener('/host_game_success', updateGame(GUp.Conn));
         RelayWS.addJsonListener('/join_game_success', updateGame(GUp.Conn));
-        RelayWS.addJsonListener('/player_joined', updatePlayers);
+        RelayWS.addJsonListener('/player_joined', updatePlayer);
         RelayWS.addJsonListener('/start_game', updateGame(GUp.Updt));
         RelayWS.addJsonListener('/user_status', updateUserStatus);
-        RelayWS.addJsonListener('/replenish', updatePlayers);
+        RelayWS.addJsonListener('/action_point_update', updateAPU);
         RelayWS.addJsonListener('/player_action', updatePlayerAction);
         RelayWS.addListener('/alert', (s) => pusher({msg: s}));
     }, [
         pusher,
         logout,
         updateGame,
-        updatePlayers,
+        updatePlayer,
+        updateAPU,
         updateUserStatus,
         updatePlayerAction,
     ]);

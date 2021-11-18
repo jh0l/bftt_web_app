@@ -8,10 +8,11 @@ export interface Pos {
 
 export interface Player {
     user_id: string;
+    game_id: string;
     lives: number;
-    action_points: number;
     pos: Pos;
     range: number;
+    action_points?: number;
 }
 
 export type GamePhase = 'Init' | 'InProg' | 'End';
@@ -37,11 +38,6 @@ export interface GameStats {
     turn_time_secs: number;
     turn_end_unix: number;
     size: number;
-}
-
-export interface GamePlayers {
-    game_id: string;
-    players: {[key: string]: Player};
 }
 
 interface AttackAction {

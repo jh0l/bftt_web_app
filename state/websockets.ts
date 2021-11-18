@@ -12,8 +12,8 @@ type ListenerEvent =
     | '/join_game_success'
     | '/player_joined'
     | '/start_game'
+    | '/action_point_update'
     | '/user_status'
-    | '/replenish'
     | '/player_action'
     | '/alert';
 export default class RelayWS {
