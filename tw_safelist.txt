@@ -6,6 +6,9 @@ badge-info
 badge-success
 badge-warning
 badge-error
+btn-success
+btn-error
+btn-info
 bg-red-100
 bg-red-300
 bg-red-500

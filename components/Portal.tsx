@@ -1,4 +1,4 @@
-import {memo, ReactNode, useEffect, useLayoutEffect, useRef} from 'react';
+import {memo, ReactNode, useEffect, useRef} from 'react';
 import {createPortal} from 'react-dom';
 
 function Portal({children}: {children: ReactNode}) {

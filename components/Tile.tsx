@@ -12,6 +12,7 @@ import React, {useCallback, useLayoutEffect, useRef, useState} from 'react';
 import {User, userAtom} from '../state/user';
 import RelayWS from '../state/websockets';
 import Portal from './Portal';
+import {useResizeDetector} from 'react-resize-detector';
 
 function PlayerOverlay({
     game_id,
@@ -32,13 +33,9 @@ function PlayerOverlay({
     if (!gameStats || !userPlayer || !player) {
         return null;
     }
-    if (
-        isOn &&
-        gameStats.phase === 'InProg' &&
-        userPlayer.lives > 0 &&
-        player.lives > 0 &&
-        inRange(userPlayer, player.pos)
-    ) {
+    const action_points =
+        typeof player.action_points === 'number' ? player.action_points : false;
+    if (isOn && gameStats.phase === 'InProg' && userPlayer.lives > 0) {
         if (user.user_id === player.user_id) {
             const upgradeHandler = () =>
                 RelayWS.sendPlayerAction({
@@ -46,15 +43,13 @@ function PlayerOverlay({
                     game_id,
                     user_id,
                 });
-            const disabled = userPlayer.action_points < 3 ? ' disable' : '';
             return (
                 <ul className="menu rounded-lg grid grid-col-2 gap-1 z-50">
                     <li>
                         <button
-                            className={
-                                'btn btn-xs btn-outline btn-info' + disabled
-                            }
-                            onMouseUp={upgradeHandler}
+                            className="btn btn-xs btn-outline btn-info"
+                            disabled={action_points < 3}
+                            onMouseDown={upgradeHandler}
                         >
                             upgrade
                         </button>
@@ -62,49 +57,48 @@ function PlayerOverlay({
                 </ul>
             );
         }
-        const attackHandler = () =>
-            RelayWS.sendPlayerAction({
-                action: {Attack: {lives_effect: -1, target_user_id: user_id}},
-                game_id,
-                user_id,
-            });
-        const giveHandler = () =>
-            RelayWS.sendPlayerAction({
-                action: {Give: {target_user_id: user_id}},
-                game_id,
-                user_id,
-            });
-        const disabled = userPlayer.action_points < 1 ? ' disable' : '';
-        return (
-            <ul className="menu rounded-lg grid grid-col-2 gap-1 z-50">
-                <li>
-                    <button
-                        className={
-                            'btn btn-xs btn-outline btn-error' + disabled
-                        }
-                        onMouseUp={attackHandler}
-                    >
-                        attack
-                    </button>
-                </li>
-                <li>
-                    <button
-                        className={
-                            'btn btn-xs btn-outline btn-success' + disabled
-                        }
-                        onMouseUp={giveHandler}
-                    >
-                        give
-                    </button>
-                </li>
-            </ul>
-        );
+        if (player.lives > 0 && inRange(userPlayer, player.pos)) {
+            const attackHandler = () =>
+                RelayWS.sendPlayerAction({
+                    action: {
+                        Attack: {lives_effect: -1, target_user_id: user_id},
+                    },
+                    game_id,
+                    user_id,
+                });
+            const giveHandler = () =>
+                RelayWS.sendPlayerAction({
+                    action: {Give: {target_user_id: user_id}},
+                    game_id,
+                    user_id,
+                });
+            return (
+                <ul className="menu rounded-lg grid grid-col-2 gap-1 z-50">
+                    <li>
+                        <button
+                            className="btn btn-xs btn-outline btn-error"
+                            disabled={action_points < 1}
+                            onMouseDown={attackHandler}
+                        >
+                            attack
+                        </button>
+                    </li>
+                    <li>
+                        <button
+                            className="btn btn-xs btn-outline btn-success"
+                            disabled={action_points < 1}
+                            onMouseDown={giveHandler}
+                        >
+                            give
+                        </button>
+                    </li>
+                </ul>
+            );
+        }
     }
     if (gameStats.phase !== 'Init') {
         const lives = player.lives > 99 ? '99+' : player.lives;
         const range = player.range > 99 ? '99+' : player.range;
-        const action_points: number | false =
-            player.user_id === user.user_id ? player.action_points : false;
         return (
             <>
                 <div
@@ -115,6 +109,8 @@ function PlayerOverlay({
                         <img
                             className="pr-px"
                             src="/Heart.png"
+                            width="13"
+                            height="13"
                             alt="lives"
                         ></img>
                         <span className="pl-px">{lives}</span>
@@ -123,23 +119,27 @@ function PlayerOverlay({
                         <img
                             className="pr-0.5"
                             src="/Range.png"
+                            width="13"
+                            height="13"
                             alt="player range"
                         ></img>
                         {range}
                     </div>
                 </div>
-                {action_points !== false && (
+                {typeof action_points === 'number' && (
                     <div
                         className="flex flex-row absolute translate-center"
-                        style={{top: -16, left: -16.5}}
+                        style={{top: -17, left: -18}}
                     >
-                        <div className="badge badge-xs badge-primary font-bold">
+                        <div className="badge badge-sm badge-primary font-bold">
                             <img
                                 className="pr-0.5"
                                 src="/ActionToken.png"
+                                width="13"
+                                height="13"
                                 alt="lives"
                             ></img>
-                            {action_points}
+                            {action_points > 99 ? '99+' : action_points}
                         </div>
                     </div>
                 )}
@@ -150,11 +150,10 @@ function PlayerOverlay({
 }
 function PlayerTile({user_id, game_id}: {user_id: string; game_id: string}) {
     const user = useRecoilValue(userAtom);
-    const [isOn, setOn] = useState(false);
-    const [coords, setCoords] = useState({});
-    const btnRef = useRef<HTMLDivElement>(null);
+
+    const targetRef = useRef<HTMLDivElement>(null);
     const updateTooltipCoords = useCallback(() => {
-        const rect = btnRef.current?.getBoundingClientRect();
+        const rect = targetRef.current?.getBoundingClientRect();
         if (rect) {
             setCoords({
                 left: rect.x + rect.width / 2,
@@ -164,16 +163,20 @@ function PlayerTile({user_id, game_id}: {user_id: string; game_id: string}) {
             console.log('player tile ' + user_id + ' no btnRef');
         }
     }, [user_id]);
+    const onResize = updateTooltipCoords;
+    useResizeDetector({onResize, targetRef});
     useLayoutEffect(() => {
-        setTimeout(updateTooltipCoords, 1);
         window.addEventListener('resize', updateTooltipCoords);
         return () => {
             window.removeEventListener('resize', updateTooltipCoords);
         };
-    }, [updateTooltipCoords, user_id]);
+    }, [updateTooltipCoords]);
+    const [isOn, setOn] = useState(false);
+    const [coords, setCoords] = useState({});
+
     return (
         <div
-            ref={btnRef}
+            ref={targetRef}
             onMouseEnter={() => {
                 updateTooltipCoords();
                 setOn(true);
@@ -185,7 +188,7 @@ function PlayerTile({user_id, game_id}: {user_id: string; game_id: string}) {
         >
             <div
                 className={
-                    ' translate-center flex justify-center items-center absolute w-5/6 h-5/6 animate-bounce-once select-none p-1 rounded-lg ' +
+                    ' translate-center flex justify-center items-center absolute w-full h-full md:w-5/6 md:h-5/6 animate-bounce-once select-none p-1 rounded-lg ' +
                     ('shadow-md z-10 bg-' + strColor(user_id))
                 }
             >

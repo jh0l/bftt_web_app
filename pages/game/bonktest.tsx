@@ -11,6 +11,7 @@ const data: Game = {
     players: {
         ii: {
             user_id: 'ii',
+            game_id: 'bonk',
             lives: 0,
             action_points: 0,
             pos: {x: 10, y: 6},
@@ -18,6 +19,7 @@ const data: Game = {
         },
         jj: {
             user_id: 'jj',
+            game_id: 'bonk',
             lives: 0,
             action_points: 0,
             pos: {x: 7, y: 4},
@@ -25,6 +27,7 @@ const data: Game = {
         },
         gg: {
             user_id: 'gg',
+            game_id: 'bonk',
             lives: 0,
             action_points: 0,
             pos: {x: 12, y: 5},
@@ -32,6 +35,7 @@ const data: Game = {
         },
         cc: {
             user_id: 'cc',
+            game_id: 'bonk',
             lives: 0,
             action_points: 0,
             pos: {x: 0, y: 0},
@@ -39,6 +43,7 @@ const data: Game = {
         },
         ff: {
             user_id: 'ff',
+            game_id: 'bonk',
             lives: 0,
             action_points: 0,
             pos: {x: 6, y: 4},
@@ -46,6 +51,7 @@ const data: Game = {
         },
         bb: {
             user_id: 'bb',
+            game_id: 'bonk',
             lives: 0,
             action_points: 0,
             pos: {x: 0, y: 1},
@@ -53,6 +59,7 @@ const data: Game = {
         },
         ee: {
             user_id: 'ee',
+            game_id: 'bonk',
             lives: 0,
             action_points: 0,
             pos: {x: 5, y: 6},
@@ -60,6 +67,7 @@ const data: Game = {
         },
         aa: {
             user_id: 'aa',
+            game_id: 'bonk',
             lives: 3,
             action_points: 3,
             pos: {x: 12, y: 8},
@@ -67,6 +75,7 @@ const data: Game = {
         },
         dd: {
             user_id: 'dd',
+            game_id: 'bonk',
             lives: 0,
             action_points: 0,
             pos: {x: 9, y: 8},
@@ -74,6 +83,7 @@ const data: Game = {
         },
         hh: {
             user_id: 'hh',
+            game_id: 'bonk',
             lives: 0,
             action_points: 0,
             pos: {x: 11, y: 6},

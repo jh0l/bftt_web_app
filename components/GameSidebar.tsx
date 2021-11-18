@@ -120,7 +120,7 @@ function PlayerListItem({
                 <div className="text-black font-bold">
                     {playerId || <pre></pre>}
                 </div>
-                <div className="stat-desc opacity-100 text-black flex flex-row gap-1 w-28">
+                <div className="stat-desc opacity-100 text-black flex flex-row gap-1 w-30">
                     <span className="px-1 bg-gray-200 bg-opacity-50 rounded-md font-bold">
                         <img
                             className="inline pr-1"
