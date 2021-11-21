@@ -53,11 +53,15 @@ export interface MoveAction {
 export interface RangeUpgradeAction {
     point_cost: number;
 }
+export interface HealAction {
+    point_cost: number;
+}
 export type ActionType =
     | {Attack: AttackAction}
     | {Give: GiveAction}
     | {Move: MoveAction}
-    | {RangeUpgrade: RangeUpgradeAction};
+    | {RangeUpgrade: RangeUpgradeAction}
+    | {Heal: HealAction};
 
 export interface PlayerAction {
     user_id: string;
@@ -74,7 +78,8 @@ export type ActionTypeEvent =
     | {Attack: AttackAction}
     | {Give: GiveAction}
     | {Move: MoveActionEvent}
-    | {RangeUpgrade: RangeUpgradeAction};
+    | {RangeUpgrade: RangeUpgradeAction}
+    | {Heal: HealAction};
 
 export interface PlayerActionResponse {
     user_id: string;

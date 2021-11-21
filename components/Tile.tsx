@@ -34,12 +34,20 @@ function PlayerOverlay({
         return null;
     }
     const action_points =
-        typeof player.action_points === 'number' ? player.action_points : false;
+        typeof userPlayer.action_points === 'number'
+            ? userPlayer.action_points
+            : false;
     if (isOn && gameStats.phase === 'InProg' && userPlayer.lives > 0) {
         if (user.user_id === player.user_id) {
             const upgradeHandler = () =>
                 RelayWS.sendPlayerAction({
                     action: {RangeUpgrade: {point_cost: 3}},
+                    game_id,
+                    user_id,
+                });
+            const healHandler = () =>
+                RelayWS.sendPlayerAction({
+                    action: {Heal: {point_cost: 3}},
                     game_id,
                     user_id,
                 });
@@ -52,6 +60,16 @@ function PlayerOverlay({
                             onMouseDown={upgradeHandler}
                         >
                             upgrade
+                        </button>
+                    </li>
+
+                    <li>
+                        <button
+                            className="btn btn-xs btn-outline btn-info"
+                            disabled={action_points < 3}
+                            onMouseDown={healHandler}
+                        >
+                            heal
                         </button>
                     </li>
                 </ul>
@@ -126,10 +144,10 @@ function PlayerOverlay({
                         {range}
                     </div>
                 </div>
-                {typeof action_points === 'number' && (
+                {userPlayer.user_id === player.user_id && (
                     <div
                         className="flex flex-row absolute translate-center"
-                        style={{top: -17, left: -18}}
+                        style={{top: -17, left: -11}}
                     >
                         <div className="badge badge-sm badge-primary font-bold">
                             <img
@@ -166,6 +184,7 @@ function PlayerTile({user_id, game_id}: {user_id: string; game_id: string}) {
     const onResize = updateTooltipCoords;
     useResizeDetector({onResize, targetRef});
     useLayoutEffect(() => {
+        setTimeout(updateTooltipCoords, 100);
         window.addEventListener('resize', updateTooltipCoords);
         return () => {
             window.removeEventListener('resize', updateTooltipCoords);
@@ -188,25 +207,20 @@ function PlayerTile({user_id, game_id}: {user_id: string; game_id: string}) {
         >
             <div
                 className={
-                    ' translate-center flex justify-center items-center absolute w-full h-full md:w-5/6 md:h-5/6 animate-bounce-once select-none p-1 rounded-lg ' +
+                    'translate-center flex justify-center items-center absolute w-full h-full md:w-5/6 md:h-5/6 animate-bounce-once select-none p-1 rounded-lg ' +
                     ('shadow-md z-10 bg-' + strColor(user_id))
                 }
             >
                 <div
                     tabIndex={0}
                     className={
-                        'indicator w-full h-full rounded-md flex justify-center items-center flex-col leading-none text-sm ' +
+                        'w-full h-full rounded-md flex justify-center items-center flex-col leading-none text-sm ' +
                         styles['centeroverflow']
                     }
                     style={{
                         backgroundColor: '#ffffff67',
                     }}
                 >
-                    {user_id == user?.user_id && (
-                        <div className="indicator-item indicator-start badge badge-primary badge-xs">
-                            💻
-                        </div>
-                    )}
                     <div
                         className={'text-black font-bold ' + styles['ts-tile']}
                     >

@@ -157,8 +157,17 @@ function usePlayerActionHandler() {
                         up.range += 1;
                         return up;
                     });
+                } else if ('Heal' in action) {
+                    set(gamePlayersAtomFamily({user_id, game_id}), (p) => {
+                        if (!p) throw Error('player uninitialized');
+                        const up = {...p};
+                        up.lives += 1;
+                        return up;
+                    });
                 } else {
-                    throw Error('unhandled action ' + action);
+                    throw Error(
+                        'unhandled player action ' + JSON.stringify(action)
+                    );
                 }
             }
     );

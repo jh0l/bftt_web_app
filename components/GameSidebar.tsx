@@ -27,8 +27,13 @@ export function GameSettings({gameStats}: {gameStats: GameStats}) {
                             </div>
                         </div>
                     </div>
-                    {user?.user_id === gameStats.host_user_id && (
-                        <>
+    const user = useRecoilValue(userAtom);
+    const userStatus = useRecoilValue(userStatusAtom);
+    const startGame = () => {
+        RelayWS.sendStartGame(gameStats.game_id);
+    };
+    const isHost = gameStats.host_user_id === user?.user_id;
+    if (!user || !gameStats) return null;
                             <div className="divider"></div>
                             <button
                                 className="btn btn-block btn-primary"
@@ -42,6 +47,16 @@ export function GameSettings({gameStats}: {gameStats: GameStats}) {
             )}
             {gameStats.phase == 'InProg' && (
                 <h1 className="m-5 text-3xl font-bold">{'<Clock />'}</h1>
+            )}
+            {gameStats.phase === 'End' && userStatus?.game_id === null && (
+                <>
+                    <div className="divider"></div>
+                    <Link passHref href="/">
+                        <button className="btn btn-block btn-primary">
+                            Leave
+                        </button>
+                    </Link>
+                </>
             )}
         </>
     );
