@@ -95,12 +95,10 @@ export default function useRequiresLogin() {
             indexApi().then((res) => {
                 if (res instanceof Error) {
                     pusher({msg: 'Failed to log in', type: 'error'});
-                    console.log(res);
                 } else {
                     if (res.user_id != null && res.msg != null)
                         loginApi(res.user_id, res.msg).then((loginRes) => {
                             if (loginRes instanceof Error) {
-                                console.log(loginRes);
                                 router.push('/login');
                             } else {
                                 setUser({user_id: res.user_id});
@@ -122,7 +120,11 @@ export function useLogoutHandler() {
     const router = useRouter();
     const {pusher} = useAlerts();
     return useRecoilCallback(({reset, snapshot}) => async () => {
-        RelayWS.close();
+        try {
+            RelayWS.close();
+        } catch (e) {
+            console.log(e);
+        }
         const res = await logoutApi();
         if (res instanceof Error) {
             console.log(res);

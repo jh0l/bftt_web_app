@@ -40,6 +40,14 @@ export interface GameStats {
     size: number;
 }
 
+export type ConfGameOp = {TurnTimeSecs: number} | {InitActPts: number};
+
+export interface ConfGame {
+    user_id: string;
+    game_id: string;
+    op: ConfGameOp;
+}
+
 interface AttackAction {
     target_user_id: string;
     lives_effect: number;

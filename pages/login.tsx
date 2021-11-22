@@ -1,8 +1,6 @@
 import Head from 'next/head';
 import LoginForm from '../components/LoginForm';
 
-// call WebSocket.connect( with username, password ) to connect ws
-
 export default function Login() {
     return (
         <>

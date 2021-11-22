@@ -80,3 +80,5 @@ border-pink-500
 border-pink-700
 border-pink-900
 dropdown-top
+opacity-0
+opacity-100

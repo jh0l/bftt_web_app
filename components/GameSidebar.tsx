@@ -1,32 +1,12 @@
-import Settings from './svg/Settings';
 import {gamePlayersAtomFamily, GameStats} from '../state/game';
 import {strColor} from '../lib/colors';
 import {useRecoilValue} from 'recoil';
-import {userAtom} from '../state/user';
+import {userAtom, userStatusAtom} from '../state/user';
 import RelayWS from '../state/websockets';
+import Link from 'next/link';
+import {GameConfiguration} from './GameConfiguration';
 
 export function GameSettings({gameStats}: {gameStats: GameStats}) {
-    const startGame = () => {
-        RelayWS.sendStartGame(gameStats.game_id);
-    };
-    const user = useRecoilValue(userAtom);
-    return (
-        <>
-            <h2 className="xl">{gameStats.phase}</h2>
-            {gameStats.phase == 'Init' && (
-                <>
-                    <div className="divider">Settings</div>
-                    <div className="shadow">
-                        <div className="stat">
-                            <div className="stat-figure text-neutral">
-                                <Settings />
-                            </div>
-                            <div className="stat-desc">Time per turn</div>
-                            <div className="stat-value">
-                                {gameStats.turn_time_secs} secs
-                            </div>
-                        </div>
-                    </div>
     const user = useRecoilValue(userAtom);
     const userStatus = useRecoilValue(userStatusAtom);
     const startGame = () => {
@@ -34,15 +14,21 @@ export function GameSettings({gameStats}: {gameStats: GameStats}) {
     };
     const isHost = gameStats.host_user_id === user?.user_id;
     if (!user || !gameStats) return null;
-                            <div className="divider"></div>
-                            <button
-                                className="btn btn-block btn-primary"
-                                onClick={startGame}
-                            >
-                                Play
-                            </button>
-                        </>
-                    )}
+    return (
+        <>
+            <h2 className="xl">{gameStats.phase}</h2>
+            {gameStats.phase == 'Init' && (
+                <>
+                    <GameConfiguration gameStats={gameStats} user={user} />
+
+                    <div className="divider"></div>
+                    <button
+                        disabled={!isHost}
+                        className="btn btn-block btn-primary"
+                        onClick={startGame}
+                    >
+                        Start Game
+                    </button>
                 </>
             )}
             {gameStats.phase == 'InProg' && (

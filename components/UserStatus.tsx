@@ -6,7 +6,6 @@ import Spinner from './svg/Spinner';
 
 export default function UserStatus() {
     const userStatus = useRecoilValue(userStatusAtom);
-    console.log(userStatus);
     useEffect(() => {
         RelayWS.queueSend(() => RelayWS.sendUserStatus(), true);
     }, []);

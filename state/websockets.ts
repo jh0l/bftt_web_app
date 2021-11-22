@@ -1,5 +1,5 @@
 import {splitCmd} from '.';
-import {ActionType, PlayerAction} from './game';
+import {ActionType, ConfGame, PlayerAction} from './game';
 const WS_ADDRESS = process.env.WS_ADDRESS;
 
 let ws: WebSocket | null = null;
@@ -13,6 +13,7 @@ type ListenerEvent =
     | '/player_joined'
     | '/start_game'
     | '/action_point_update'
+    | '/conf_game'
     | '/user_status'
     | '/player_action'
     | '/alert';
@@ -120,6 +121,11 @@ export default class RelayWS {
     static sendJoinGame(gameId: string) {
         if (!ws) throw Error('uninitialised');
         ws.send('/join_game ' + gameId);
+    }
+
+    static sendConfGame(conf: ConfGame) {
+        if (!ws) throw Error('uninitialized');
+        ws.send('/conf_game ' + JSON.stringify(conf));
     }
 
     static sendStartGame(gameId: string) {

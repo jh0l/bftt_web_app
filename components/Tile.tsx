@@ -177,10 +177,8 @@ function PlayerTile({user_id, game_id}: {user_id: string; game_id: string}) {
                 left: rect.x + rect.width / 2,
                 top: rect.y + window.scrollY + rect.width / 2,
             });
-        } else {
-            console.log('player tile ' + user_id + ' no btnRef');
         }
-    }, [user_id]);
+    }, []);
     const onResize = updateTooltipCoords;
     useResizeDetector({onResize, targetRef});
     useLayoutEffect(() => {

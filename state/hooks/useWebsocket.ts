@@ -58,9 +58,7 @@ export function useUpdateGameHandler(router?: NextRouter) {
                     set(gamePlayersAtomFamily({game_id, user_id}), player);
                 }
                 for (let [k, v] of Object.entries(board.map)) {
-                    console.log(k);
                     let [x, y] = k.split(',').map(Number);
-                    console.log(x, y);
                     set(boardTileByUserFamily({x, y, game_id}), v);
                 }
             }
@@ -189,6 +187,7 @@ export default function useWebsocket() {
         RelayWS.addJsonListener('/host_game_success', updateGame(GUp.Conn));
         RelayWS.addJsonListener('/join_game_success', updateGame(GUp.Conn));
         RelayWS.addJsonListener('/player_joined', updatePlayer);
+        RelayWS.addJsonListener('/conf_game', updateGame(GUp.Updt));
         RelayWS.addJsonListener('/start_game', updateGame(GUp.Updt));
         RelayWS.addJsonListener('/user_status', updateUserStatus);
         RelayWS.addJsonListener('/action_point_update', updateAPU);
