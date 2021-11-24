@@ -15,6 +15,15 @@ export interface Player {
     action_points?: number;
 }
 
+export interface GameConfig {
+    turn_time_secs: number;
+    max_players: number;
+    init_range: number;
+    init_action_points: number;
+    init_lives: number;
+    init_pos: 'Random' | 'Manual';
+}
+
 export type GamePhase = 'Init' | 'InProg' | 'End';
 export type Board = {
     map: Record<string, string>;
@@ -25,23 +34,30 @@ export interface Game {
     phase: GamePhase;
     game_id: string;
     host_user_id: string;
-    players: {[key: string]: Player};
-    turn_time_secs: number;
+    players: {[k: string]: Player};
     board: Board;
     turn_end_unix: number;
+    config: GameConfig;
 }
 
 export interface GameStats {
     game_id: string;
     phase: GamePhase;
     host_user_id: string;
-    turn_time_secs: number;
     turn_end_unix: number;
-    size: number;
+    boardSize: number;
+    config: GameConfig;
 }
 
-export type ConfGameOp = {TurnTimeSecs: number} | {InitActPts: number};
+export type ConfGameOp =
+    | {TurnTimeSecs: number}
+    | {MaxPlayers: number}
+    | {BoardSize: number}
+    | {InitActPts: number}
+    | {InitLives: number}
+    | {InitRange: number};
 
+// request to configure game by host
 export interface ConfGame {
     user_id: string;
     game_id: string;

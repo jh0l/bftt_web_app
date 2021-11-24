@@ -47,9 +47,9 @@ export function useUpdateGameHandler(router?: NextRouter) {
                     game_id,
                     phase: game.phase,
                     host_user_id: game.host_user_id,
-                    turn_time_secs: game.turn_time_secs,
                     turn_end_unix: game.turn_end_unix,
-                    size: game.board.size,
+                    boardSize: game.board.size,
+                    config: game.config,
                 });
                 // set players
                 set(gamePlayerIdsAtomFamily(game_id), playerIdList);

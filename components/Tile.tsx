@@ -33,9 +33,12 @@ function PlayerOverlay({
     if (!gameStats || !userPlayer || !player) {
         return null;
     }
+    const isUser = player.user_id === userPlayer.user_id;
     const action_points =
         typeof userPlayer.action_points === 'number'
             ? userPlayer.action_points
+            : gameStats.phase == 'Init' && isUser
+            ? gameStats.config.init_action_points
             : false;
     if (isOn && gameStats.phase === 'InProg' && userPlayer.lives > 0) {
         if (user.user_id === player.user_id) {
@@ -114,58 +117,56 @@ function PlayerOverlay({
             );
         }
     }
-    if (gameStats.phase !== 'Init') {
-        const lives = player.lives > 99 ? '99+' : player.lives;
-        const range = player.range > 99 ? '99+' : player.range;
-        return (
-            <>
+    const lives = player.lives > 99 ? '99+' : player.lives;
+    const range = player.range > 99 ? '99+' : player.range;
+    return (
+        <>
+            <div
+                className="flex flex-row absolute translate-center"
+                style={{top: 16}}
+            >
+                <div className="badge badge-xs font-bold">
+                    <img
+                        className="pr-px"
+                        src="/Heart.png"
+                        width="13"
+                        height="13"
+                        alt="lives"
+                    ></img>
+                    <span className="pl-px">{lives}</span>
+                </div>
+                <div className="badge badge-xs font-bold">
+                    <img
+                        className="pr-0.5"
+                        src="/Range.png"
+                        width="13"
+                        height="13"
+                        alt="player range"
+                    ></img>
+                    {range}
+                </div>
+            </div>
+            {userPlayer.user_id === player.user_id && (
                 <div
                     className="flex flex-row absolute translate-center"
-                    style={{top: 16}}
+                    style={{top: -17, left: -11}}
                 >
-                    <div className="badge badge-xs font-bold">
+                    <div className="badge badge-sm badge-primary font-bold">
                         <img
-                            className="pr-px"
-                            src="/Heart.png"
+                            className="pr-0.5"
+                            src="/ActionToken.png"
                             width="13"
                             height="13"
                             alt="lives"
                         ></img>
-                        <span className="pl-px">{lives}</span>
-                    </div>
-                    <div className="badge badge-xs font-bold">
-                        <img
-                            className="pr-0.5"
-                            src="/Range.png"
-                            width="13"
-                            height="13"
-                            alt="player range"
-                        ></img>
-                        {range}
+                        {action_points > 99 ? '99+' : action_points}
                     </div>
                 </div>
-                {userPlayer.user_id === player.user_id && (
-                    <div
-                        className="flex flex-row absolute translate-center"
-                        style={{top: -17, left: -11}}
-                    >
-                        <div className="badge badge-sm badge-primary font-bold">
-                            <img
-                                className="pr-0.5"
-                                src="/ActionToken.png"
-                                width="13"
-                                height="13"
-                                alt="lives"
-                            ></img>
-                            {action_points > 99 ? '99+' : action_points}
-                        </div>
-                    </div>
-                )}
-            </>
-        );
-    }
-    return null;
+            )}
+        </>
+    );
 }
+
 function PlayerTile({user_id, game_id}: {user_id: string; game_id: string}) {
     const user = useRecoilValue(userAtom);
 

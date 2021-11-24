@@ -32,7 +32,10 @@ export function GameSettings({gameStats}: {gameStats: GameStats}) {
                 </>
             )}
             {gameStats.phase == 'InProg' && (
-                <h1 className="m-5 text-3xl font-bold">{'<Clock />'}</h1>
+                <h1 className="m-5 text-3xl font-bold">
+                    {'<Clock />'}-{gameStats.config.turn_time_secs}-
+                    {gameStats.turn_end_unix}
+                </h1>
             )}
             {gameStats.phase === 'End' && userStatus?.game_id === null && (
                 <>
@@ -145,7 +148,8 @@ function PlayerListItem({
                                 alt="player range"
                                 src="/ActionToken.png"
                             ></img>
-                            {player?.action_points}
+                            {player?.action_points ||
+                                gameStats.config.init_action_points}
                         </span>
                     )}
                 </div>

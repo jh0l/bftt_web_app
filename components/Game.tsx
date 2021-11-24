@@ -3,7 +3,8 @@ import {useLayoutEffect, useMemo, useRef} from 'react';
 import {Tile} from './Tile';
 import GameSidebar from './GameSidebar';
 
-export function Board({gameStats: {size, game_id}}: {gameStats: GameStats}) {
+export function Board({gameStats}: {gameStats: GameStats}) {
+    const {boardSize: size, game_id} = gameStats;
     const tileMap = useMemo(() => {
         return Array(size * size)
             .fill(0)
@@ -72,7 +73,7 @@ export default function Game({
     return (
         <div className="flex flex-grow flex-col-reverse lg:flex-row-reverse justify-center items-center lg:items-start">
             <GameSidebar gameStats={gameStats} playerIds={playerIds} />
-            <Sizer divisor={gameStats.size}>
+            <Sizer divisor={gameStats.boardSize}>
                 <Board gameStats={gameStats} />
             </Sizer>
         </div>
