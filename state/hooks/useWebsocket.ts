@@ -34,7 +34,7 @@ export function useUpdateGameHandler(router?: NextRouter) {
     return useRecoilCallback(
         ({set}) =>
             (updateType: GUp = GUp.Conn) =>
-            async (res: Game | GameConfigResult) => {
+            (res: Game | GameConfigResult) => {
                 let game: Game;
                 let cleanup: {[k: string]: string} = {};
                 // contains tile positions to be removed
@@ -208,6 +208,11 @@ export default function useWebsocket() {
         RelayWS.addJsonListener('/action_point_update', updateAPU);
         RelayWS.addJsonListener('/player_action', updatePlayerAction);
         RelayWS.addListener('/alert', (s) => pusher({msg: s}));
+        RelayWS.logoutCallback = logout;
+        RelayWS.alertCallback = pusher;
+        return () => {
+            RelayWS.logoutCallback = undefined;
+        };
     }, [
         pusher,
         logout,

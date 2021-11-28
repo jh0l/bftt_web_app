@@ -1,5 +1,6 @@
 import {splitCmd} from '.';
-import {ActionType, ConfGame, PlayerAction} from './game';
+import {AlertType} from './alerts';
+import {ConfGame, PlayerAction} from './game';
 const WS_ADDRESS = process.env.WS_ADDRESS;
 
 let ws: WebSocket | null = null;
@@ -25,6 +26,8 @@ export default class RelayWS {
     static sessionKey: string;
     static onOpenQueue: (() => void)[] = [];
     static onAuthQueue: (() => void)[] = [];
+    static logoutCallback: (() => Promise<void>) | undefined;
+    static alertCallback: (notif: AlertType) => void;
 
     static connect(identity: {user_id: string; password: string}) {
         if (typeof WS_ADDRESS != 'string')
@@ -52,6 +55,13 @@ export default class RelayWS {
         ws.onclose = () => {
             RelayWS.WS_OPEN = false;
             ws = null;
+            if (RelayWS.logoutCallback) {
+                RelayWS.logoutCallback();
+                RelayWS.alertCallback({
+                    msg: 'Connection with server closed',
+                    type: 'info',
+                });
+            }
         };
     }
 
@@ -65,12 +75,14 @@ export default class RelayWS {
         RelayWS.listeners.set(command, listener);
     }
 
-    static addJsonListener<T>(
+    static async addJsonListener<T>(
         command: ListenerEvent,
-        listener: (p: T) => void
+        listener: ((p: T) => void) | ((p: T) => Promise<void>)
     ) {
         // TODO handle parsing errors
-        RelayWS.listeners.set(command, (str) => listener(JSON.parse(str)));
+        RelayWS.listeners.set(command, async (str) => {
+            listener(JSON.parse(str));
+        });
     }
 
     static queueSend(func: () => void, authRequired = false) {
