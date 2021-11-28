@@ -1,5 +1,5 @@
 import Settings from './svg/Settings';
-import {ConfGameOp, GameStats} from '../state/game';
+import {ConfGameOp, GameStats, InitPosConfig} from '../state/game';
 import {User} from '../state/user';
 import RelayWS from '../state/websockets';
 import React, {
@@ -75,11 +75,15 @@ const ConfigItem = React.forwardRef(function ConfigItemInner(
         </div>
     );
 });
-const valMap = (map: {[k: string]: number}) =>
-    Object.entries(map).reduce(
+function valMap<
+    A extends string | number | symbol,
+    B extends string | number | symbol
+>(map: Record<A, B>) {
+    return Object.entries<B>(map).reduce(
         (acc, [k, v]) => ({...acc, [v]: k}),
         {} as {[k: number]: string}
     );
+}
 export class TEMPLATES {
     static rechargeTimes = {
         '10 seconds': 10,
@@ -139,6 +143,11 @@ export class TEMPLATES {
         '21 tiles': 21,
     };
     static initRangeNums = valMap(TEMPLATES.initRange);
+
+    static initPos = {
+        Manual: 'Manual',
+        Random: 'Random',
+    };
 }
 
 export function GameConfiguration({
@@ -315,6 +324,38 @@ export function GameConfiguration({
                     </select>
                 }
             />
+            <ConfigItem
+                isHost={isHost}
+                label="Player Positions"
+                value={gameStats.config.init_pos}
+                input={
+                    <select
+                        className="select-lg cursor-pointer opacity-0 w-full max-w-xs"
+                        value={gameStats.config.init_pos}
+                        onChange={({target: {value}}) =>
+                            configHandler({InitPos: value as InitPosConfig})
+                        }
+                    >
+                        {Object.entries(TEMPLATES.initPos).map(([k, v]) => (
+                            <option
+                                key={k}
+                                value={v}
+                                className="text-base bg-base-100"
+                            >
+                                {k}
+                            </option>
+                        ))}
+                    </select>
+                }
+            />
+            {gameStats.config.init_pos === 'Random' && (
+                <button
+                    className="btn-block btn-info btn-sm font-bold"
+                    onClick={() => configHandler({InitPos: 'Random'})}
+                >
+                    REGENERATE
+                </button>
+            )}
         </>
     );
 }

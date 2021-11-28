@@ -277,7 +277,8 @@ function MoveAction({
     );
     const gameStats = useRecoilValue(gameStatsAtomFamily(game_id));
 
-    const handleAction = () =>
+    const handleAction: React.MouseEventHandler<HTMLDivElement> = (e) => {
+        if (e.button !== 0) return;
         user_id
             ? RelayWS.sendPlayerAction({
                   user_id,
@@ -285,16 +286,27 @@ function MoveAction({
                   action: {Move: {pos: {x: xy.x, y: xy.y}}},
               })
             : console.warn('user not loaded');
-
+    };
+    const handleTouchAction = () => {
+        user_id
+            ? RelayWS.sendPlayerAction({
+                  user_id,
+                  game_id,
+                  action: {Move: {pos: {x: xy.x, y: xy.y}}},
+              })
+            : console.warn('user not loaded');
+    };
     if (
         user_id &&
         userPlayer &&
-        (gameStats?.phase === 'Init' ||
+        ((gameStats?.phase === 'Init' &&
+            gameStats.config.init_pos === 'Manual') ||
             (gameStats?.phase === 'InProg' && inRange(userPlayer, xy)))
     )
         return (
             <div
                 onMouseDown={handleAction}
+                onTouchStart={handleTouchAction}
                 className={
                     'w-full h-full text-center flex justify-center items-center absolute inset-1/2 cursor-pointer select-none leading-none'
                 }

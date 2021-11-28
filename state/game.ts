@@ -15,13 +15,15 @@ export interface Player {
     action_points?: number;
 }
 
+export type InitPosConfig = 'Random' | 'Manual';
+
 export interface GameConfig {
     turn_time_secs: number;
     max_players: number;
     init_range: number;
     init_action_points: number;
     init_lives: number;
-    init_pos: 'Random' | 'Manual';
+    init_pos: InitPosConfig;
 }
 
 export type GamePhase = 'Init' | 'InProg' | 'End';
@@ -55,13 +57,20 @@ export type ConfGameOp =
     | {BoardSize: number}
     | {InitActPts: number}
     | {InitLives: number}
-    | {InitRange: number};
+    | {InitRange: number}
+    | {InitPos: InitPosConfig};
 
 // request to configure game by host
 export interface ConfGame {
     user_id: string;
     game_id: string;
     op: ConfGameOp;
+}
+
+// response from server containing optional board tile cleanup
+export interface GameConfigResult {
+    game: Game;
+    result: undefined | {[k: string]: string};
 }
 
 interface AttackAction {

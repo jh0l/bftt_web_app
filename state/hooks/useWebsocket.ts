@@ -12,6 +12,7 @@ import {
     gamePlayersAtomFamily,
     gameStatsAtomFamily,
     Player,
+    GameConfigResult,
 } from '../game';
 import {UserStatus, userStatusAtom} from '../user';
 import RelayWS from '../websockets';
@@ -33,11 +34,18 @@ export function useUpdateGameHandler(router?: NextRouter) {
     return useRecoilCallback(
         ({set}) =>
             (updateType: GUp = GUp.Conn) =>
-            (game: Game) => {
+            async (res: Game | GameConfigResult) => {
+                let game: Game;
+                let cleanup: {[k: string]: string} = {};
+                // contains tile positions to be removed
+                if ('result' in res) {
+                    game = res.game;
+                    if (res.result) cleanup = res.result;
+                } else game = res;
                 const {game_id, players, board} = game;
                 const playerIdList = Object.keys(players);
-                // set new game and player list
                 if (updateType === GUp.Conn) {
+                    // set new game and navigate
                     set(gameListAtom, (v) => [...v, game_id]);
                     set(currentGameAtom, game_id);
                     router?.push(`/game/${game_id}`);
@@ -51,15 +59,20 @@ export function useUpdateGameHandler(router?: NextRouter) {
                     boardSize: game.board.size,
                     config: game.config,
                 });
-                // set players
+                // cleanup player tiles that have moved
+                for (let coords of Object.keys(cleanup)) {
+                    const [x, y] = coords.split(',').map(Number);
+                    set(boardTileByUserFamily({game_id, x, y}), null);
+                }
+                // set players;
                 set(gamePlayerIdsAtomFamily(game_id), playerIdList);
                 for (let player of Object.values(players)) {
                     const {user_id} = player;
                     set(gamePlayersAtomFamily({game_id, user_id}), player);
                 }
                 for (let [k, v] of Object.entries(board.map)) {
-                    let [x, y] = k.split(',').map(Number);
-                    set(boardTileByUserFamily({x, y, game_id}), v);
+                    const [x1, y1] = k.split(',').map(Number);
+                    set(boardTileByUserFamily({x: x1, y: y1, game_id}), v);
                 }
             }
     );
@@ -70,6 +83,8 @@ function useGamePlayerHandler() {
         const {game_id, user_id} = player;
         set(gamePlayerIdsAtomFamily(game_id), (x) => (x ? [...x, user_id] : x));
         set(gamePlayersAtomFamily({game_id, user_id}), player);
+        const {x, y} = player.pos;
+        set(boardTileByUserFamily({x, y, game_id}), player.user_id);
     });
 }
 interface ActionPointUpdate {
