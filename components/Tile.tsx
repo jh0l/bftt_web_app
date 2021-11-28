@@ -6,9 +6,16 @@ import {
     Pos,
 } from '../state/game';
 import {strColor} from '../lib/colors';
-import {useRecoilValue} from 'recoil';
+import {atom, useRecoilState, useRecoilValue} from 'recoil';
 import styles from './Tile.module.css';
-import React, {useCallback, useLayoutEffect, useRef, useState} from 'react';
+import React, {
+    ReactNode,
+    useCallback,
+    useEffect,
+    useLayoutEffect,
+    useRef,
+    useState,
+} from 'react';
 import {User, userAtom} from '../state/user';
 import RelayWS from '../state/websockets';
 import Portal from './Portal';
@@ -122,10 +129,10 @@ function PlayerOverlay({
     return (
         <>
             <div
-                className="flex flex-row absolute translate-center"
+                className="flex flex-row translate-center gap-0.5"
                 style={{top: 16}}
             >
-                <div className="badge badge-xs font-bold">
+                <div className="badge md:badge-xs font-bold">
                     <img
                         className="pr-px"
                         src="/Heart.png"
@@ -135,7 +142,7 @@ function PlayerOverlay({
                     ></img>
                     <span className="pl-px">{lives}</span>
                 </div>
-                <div className="badge badge-xs font-bold">
+                <div className="badge md:badge-xs font-bold">
                     <img
                         className="pr-0.5"
                         src="/Range.png"
@@ -151,7 +158,10 @@ function PlayerOverlay({
                     className="flex flex-row absolute translate-center"
                     style={{top: -17, left: -11}}
                 >
-                    <div className="badge badge-sm badge-primary font-bold">
+                    <div
+                        className="badge md:badge-sm badge-primary font-bold absolute"
+                        style={{top: -5, left: -12}}
+                    >
                         <img
                             className="pr-0.5"
                             src="/ActionToken.png"
@@ -206,7 +216,7 @@ function PlayerTile({user_id, game_id}: {user_id: string; game_id: string}) {
         >
             <div
                 className={
-                    'translate-center flex justify-center items-center absolute w-full h-full md:w-5/6 md:h-5/6 animate-bounce-once select-none p-1 rounded-lg ' +
+                    'translate-center flex justify-center items-center w-full h-full md:w-5/6 md:h-5/6 animate-bounce-once select-none p-1 rounded-lg ' +
                     ('shadow-md z-10 bg-' + strColor(user_id))
                 }
             >
@@ -230,7 +240,7 @@ function PlayerTile({user_id, game_id}: {user_id: string; game_id: string}) {
             <Portal>
                 <div className="absolute" style={coords}>
                     <div className="relative">
-                        <div className="absolute translate-center">
+                        <div className="translate-center">
                             {user && (
                                 <PlayerOverlay
                                     game_id={game_id}
@@ -320,6 +330,38 @@ function MoveAction({
         );
     return null;
 }
+const singleton = atom<number | null>({
+    key: 'singleton',
+    default: null,
+});
+
+interface SingletonProps {
+    tag: number;
+    unmount: () => void;
+    children: ReactNode;
+}
+/** Ensures only the last instance of this component mounted should be mounted (assuming `unmount` works)
+ */
+function Singleton({tag, unmount, children}: SingletonProps) {
+    const [sgl, setSgl] = useRecoilState(singleton);
+    const [mounted, setMounted] = useState(0);
+    useEffect(() => {
+        if (mounted > 0 && tag !== sgl) {
+            unmount();
+        }
+    }, [unmount, mounted, tag, sgl]);
+    useEffect(() => {
+        let clear: NodeJS.Timeout | null = null;
+        if (mounted < 1) {
+            setSgl(tag);
+            clear = setTimeout(() => setMounted((x) => x + 1), 0);
+        }
+        return () => {
+            clear !== null && clearTimeout(clear);
+        };
+    }, [mounted, setSgl, tag]);
+    return <>{children}</>;
+}
 
 export function Tile({
     i,
@@ -334,10 +376,12 @@ export function Tile({
     const y = Math.floor(i / len);
     const user_id = useRecoilValue(boardTileByUserFamily({x, y, game_id}));
     const [isHover, setHover] = useState(false);
+    const unmount = useCallback(() => setHover(false), []);
     return (
         <div
             onMouseEnter={() => setHover(true)}
-            onMouseLeave={() => setHover(false)}
+            onTouchStart={() => setHover(true)}
+            onMouseLeave={unmount}
             className={
                 'overflow-visible grid-item relative ' +
                 ((Math.floor(i / len) + i) % 2 == 0
@@ -345,9 +389,22 @@ export function Tile({
                     : ' bg-gray-400')
             }
         >
-            {user_id && <PlayerTile user_id={user_id} game_id={game_id} />}
+            {user_id ? (
+                <PlayerTile user_id={user_id} game_id={game_id} />
+            ) : (
+                <div className="select-none text-2xs md:text-xs text-base-100">
+                    <div className="absolute top-0.5 md:top-0 right-0.5">
+                        {y}
+                    </div>
+                    <div className="absolute bottom-0 left-0.5 md:left-1">
+                        {(x + 10).toString(36).toUpperCase()}
+                    </div>
+                </div>
+            )}
             {isHover && !user_id && (
-                <MoveAction xy={{x, y}} game_id={game_id} />
+                <Singleton tag={i} unmount={unmount}>
+                    <MoveAction xy={{x, y}} game_id={game_id} />
+                </Singleton>
             )}
         </div>
     );

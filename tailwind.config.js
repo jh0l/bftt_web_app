@@ -29,6 +29,9 @@ module.exports = {
     darkMode: 'media',
     theme: {
         extend: {
+            fontSize: {
+                '2xs': '0.35rem',
+            },
             spacing: {
                 110: '27rem',
                 120: '30rem',

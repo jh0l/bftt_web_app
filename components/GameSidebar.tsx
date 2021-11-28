@@ -5,6 +5,7 @@ import {userAtom, userStatusAtom} from '../state/user';
 import RelayWS from '../state/websockets';
 import Link from 'next/link';
 import {GameConfiguration} from './GameConfiguration';
+import Scrollbars from 'react-custom-scrollbars';
 
 export function GameSettings({gameStats}: {gameStats: GameStats}) {
     const user = useRecoilValue(userAtom);
@@ -62,38 +63,40 @@ export default function GameSidebar({
     const user_id = useRecoilValue(userAtom)?.user_id;
     if (!user_id) return null;
     return (
-        <div className="flex flex-col gap-2 mx-6 w-72">
-            <h1 className="m-5 text-4xl font-bold">{gameStats.game_id}</h1>
-            <GameSettings gameStats={gameStats} />
-            <div className="divider">{playerIds.length} Players</div>
-            <div className="flex flex-col gap-2 w-72 max-h-full overflow-x-visible no-scrollbar">
-                <PlayerListItem
-                    playerId={user_id}
-                    gameStats={gameStats}
-                    showPoints
-                    isHost={gameStats.host_user_id == user_id}
-                />
-                <div className="divider"></div>
-                {user_id !== gameStats.host_user_id && (
+        <Scrollbars style={{width: '320px', height: '100%'}} autoHide>
+            <div className="flex flex-col gap-2 ml-3 w-72">
+                <h1 className="m-5 text-4xl font-bold">{gameStats.game_id}</h1>
+                <GameSettings gameStats={gameStats} />
+                <div className="divider">{playerIds.length} Players</div>
+                <div className="flex flex-col gap-2 w-72 max-h-full overflow-x-visible no-scrollbar">
                     <PlayerListItem
-                        playerId={gameStats.host_user_id}
+                        playerId={user_id}
                         gameStats={gameStats}
-                        isHost
+                        showPoints
+                        isHost={gameStats.host_user_id == user_id}
                     />
-                )}
-                {playerIds
-                    .filter(
-                        (k) => k !== gameStats.host_user_id && k !== user_id
-                    )
-                    .map((id) => (
+                    <div className="divider"></div>
+                    {user_id !== gameStats.host_user_id && (
                         <PlayerListItem
-                            playerId={id}
-                            key={id}
+                            playerId={gameStats.host_user_id}
                             gameStats={gameStats}
+                            isHost
                         />
-                    ))}
+                    )}
+                    {playerIds
+                        .filter(
+                            (k) => k !== gameStats.host_user_id && k !== user_id
+                        )
+                        .map((id) => (
+                            <PlayerListItem
+                                playerId={id}
+                                key={id}
+                                gameStats={gameStats}
+                            />
+                        ))}
+                </div>
             </div>
-        </div>
+        </Scrollbars>
     );
 }
 
@@ -114,10 +117,13 @@ function PlayerListItem({
     );
     return (
         <div className="shadow">
-            <div className={'indicator stat bg-' + strColor(playerId)}>
+            <div className={'indicator relative stat bg-' + strColor(playerId)}>
                 {isHost && <div className="stat-title text-black">Host</div>}
                 {playerId === userId?.user_id && (
-                    <div className="indicator-item indicator-start badge badge-primary">
+                    <div
+                        className="badge badge-primary absolute"
+                        style={{top: -8, left: -10}}
+                    >
                         💻
                     </div>
                 )}
@@ -142,7 +148,7 @@ function PlayerListItem({
                         {player?.range}
                     </span>
                     {showPoints && (
-                        <span className="px-1 bg-gray-200 bg-opacity-50 rounded-md font-bold">
+                        <span className="px-1 btn-primary rounded-md font-bold">
                             <img
                                 className="inline pr-1 pb-0.5"
                                 alt="player range"

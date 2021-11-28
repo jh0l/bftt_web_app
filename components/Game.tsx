@@ -11,18 +11,20 @@ export function Board({gameStats}: {gameStats: GameStats}) {
             .map((_, i) => <Tile key={i} i={i} len={size} game_id={game_id} />);
     }, [size, game_id]);
     return (
-        <div className="px-3">
-            <div
-                className="shadow-2xl"
-                style={{
-                    margin: '0 auto',
-                    boxSizing: 'border-box',
-                    display: 'grid',
-                    gridTemplateColumns: `repeat(${size}, 1fr)`,
-                    gridTemplateRows: `auto`,
-                }}
-            >
-                {tileMap}
+        <div className="px-3 overflow-hidden">
+            <div style={{transform: 'scale(1)'}}>
+                <div
+                    className="shadow-2xl"
+                    style={{
+                        margin: '0 auto',
+                        boxSizing: 'border-box',
+                        display: 'grid',
+                        gridTemplateColumns: `repeat(${size}, 1fr)`,
+                        gridTemplateRows: `auto`,
+                    }}
+                >
+                    {tileMap}
+                </div>
             </div>
         </div>
     );

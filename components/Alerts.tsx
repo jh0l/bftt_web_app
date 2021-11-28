@@ -19,18 +19,24 @@ function Popup({
         const id = setTimeout(onClose, time.current, k);
         return () => clearTimeout(id);
     }, [onClose, time, k]);
-
+    useEffect(() => {
+        console.log(type, msg, new Date().toLocaleTimeString());
+    }, [type, msg]);
     return (
-        <div className={`pointer-events-auto indicator alert alert-${style}`}>
-            <button
-                onClick={() => onClose(k)}
-                className={`btn btn-square btn-xs indicator-item badge badge-${style}`}
+        <div className="bg-base-300 bg-opacity-95 rounded-2xl">
+            <div
+                className={`pointer-events-auto indicator alert alert-${style}`}
             >
-                <X />
-            </button>
-            <div className="flex-1">
-                <Info />
-                <label className="mr-3">{msg}</label>
+                <button
+                    onClick={() => onClose(k)}
+                    className={`btn btn-square btn-xs indicator-item badge badge-${style}`}
+                >
+                    <X />
+                </button>
+                <div className="flex-1">
+                    <Info />
+                    <label className="mr-3">{msg}</label>
+                </div>
             </div>
         </div>
     );
