@@ -20,6 +20,7 @@ export default function JoinGameInput() {
             </label>
             <div className="relative">
                 <input
+                    id="join-game-input"
                     type="text"
                     placeholder="Game ID"
                     className="w-full pr-16 input input-primary input-bordered"
@@ -27,6 +28,7 @@ export default function JoinGameInput() {
                     onChange={(e) => setName(e.target.value)}
                 />
                 <button
+                    id="join-game-submit"
                     className="absolute top-0 right-0 rounded-l-none btn btn-primary"
                     onClick={joinGame}
                 >

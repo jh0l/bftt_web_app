@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "puppet": "cd puppeteer && tsc && (node ./dst/start_game.js)"
   },
   "dependencies": {
     "next": "^12.0.2",
@@ -14,9 +15,10 @@
     "react-custom-scrollbars": "^4.2.1",
     "react-dom": "17.0.2",
     "react-resize-detector": "^6.7.6",
-    "recoil": "^0.4.0"
+    "recoil": "^0.5.2"
   },
   "devDependencies": {
+    "@types/puppeteer": "^5.4.4",
     "@types/react": "17.0.15",
     "@types/react-custom-scrollbars": "^4.0.9",
     "@types/react-dom": "^17.0.11",
@@ -25,6 +27,7 @@
     "eslint": "7.32.0",
     "eslint-config-next": "11.0.1",
     "postcss": "^8.3.5",
+    "puppeteer": "^11.0.0",
     "tailwindcss": "^2.2.4",
     "typescript": "4.3.5"
   }

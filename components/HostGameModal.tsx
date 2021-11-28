@@ -33,6 +33,7 @@ export default function GameModal() {
     return (
         <div className="form-control">
             <label
+                id="host-game-label"
                 htmlFor="host-game-modal"
                 className="btn btn-primary modal-button"
             >
@@ -68,6 +69,7 @@ export default function GameModal() {
                                 </label>
                                 <div className="flex space-x-2">
                                     <input
+                                        id="host-game-input"
                                         ref={inputRef}
                                         type="text"
                                         placeholder="Game ID"
@@ -78,6 +80,7 @@ export default function GameModal() {
                                         }
                                     />
                                     <button
+                                        id="host-game-submit"
                                         className="btn btn-primary"
                                         onClick={newGame}
                                     >

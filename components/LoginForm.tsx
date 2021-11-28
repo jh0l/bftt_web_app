@@ -40,6 +40,7 @@ export default function LoginForm() {
                         </span>
                     </label>
                     <input
+                        id="username"
                         type="text"
                         placeholder="username"
                         className={
@@ -55,6 +56,7 @@ export default function LoginForm() {
                         <span className="label-text">Password</span>
                     </label>
                     <input
+                        id="password"
                         type="text"
                         placeholder="password"
                         className="input input-bordered"
@@ -69,6 +71,7 @@ export default function LoginForm() {
                 </div>
                 <div className="form-control mt-6">
                     <input
+                        id="login"
                         onClick={login}
                         type="button"
                         value="Login"
