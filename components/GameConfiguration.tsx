@@ -117,6 +117,7 @@ export class TEMPLATES {
     static boardSizeNums = valMap(TEMPLATES.boardSize);
 
     static initActPts = {
+        '0 action points': 0,
         '1 action point': 1,
         '2 action points': 2,
         '3 action points': 3,
@@ -165,14 +166,22 @@ export function GameConfiguration({
         });
     };
     const timeValue =
-        TEMPLATES.rechargeTimesNums[gameStats.config.turn_time_secs] || '?';
+        TEMPLATES.rechargeTimesNums[gameStats.config.turn_time_secs] ||
+        gameStats.config.turn_time_secs;
     const maxPlayers =
-        TEMPLATES.maxPlayersNums[gameStats.config.max_players] || '?';
-    const boardSize = TEMPLATES.boardSizeNums[gameStats.boardSize] || '?';
+        TEMPLATES.maxPlayersNums[gameStats.config.max_players] ||
+        gameStats.config.max_players;
+    const boardSize =
+        TEMPLATES.boardSizeNums[gameStats.boardSize] || gameStats.boardSize;
     const actPts =
-        TEMPLATES.initActPtsNums[gameStats.config.init_action_points] || '?';
-    const lives = TEMPLATES.initLivesNums[gameStats.config.init_lives] || '?';
-    const range = TEMPLATES.initRangeNums[gameStats.config.init_range] || '?';
+        TEMPLATES.initActPtsNums[gameStats.config.init_action_points] ||
+        gameStats.config.init_action_points;
+    const lives =
+        TEMPLATES.initLivesNums[gameStats.config.init_lives] ||
+        gameStats.config.init_lives;
+    const range =
+        TEMPLATES.initRangeNums[gameStats.config.init_range] ||
+        gameStats.config.init_range;
     const isHost = user.user_id === gameStats.host_user_id;
     return (
         <>
@@ -180,7 +189,7 @@ export function GameConfiguration({
             <ConfigItem
                 isHost={isHost}
                 label="Time between recharges"
-                value={timeValue}
+                value={timeValue + ''}
                 input={
                     <select
                         className="select-lg cursor-pointer opacity-0 w-full max-w-xs"
@@ -206,7 +215,7 @@ export function GameConfiguration({
             <ConfigItem
                 isHost={isHost}
                 label="Max Players"
-                value={maxPlayers}
+                value={maxPlayers + ''}
                 input={
                     <select
                         className="select-lg cursor-pointer opacity-0 w-full max-w-xs"
@@ -230,7 +239,7 @@ export function GameConfiguration({
             <ConfigItem
                 isHost={isHost}
                 label="Board Size"
-                value={boardSize}
+                value={boardSize + ''}
                 input={
                     <select
                         className="select-lg cursor-pointer opacity-0 w-full max-w-xs"
@@ -255,7 +264,7 @@ export function GameConfiguration({
             <ConfigItem
                 isHost={isHost}
                 label="Player Lives"
-                value={lives}
+                value={lives + ''}
                 input={
                     <select
                         className="select-lg cursor-pointer opacity-0 w-full max-w-xs"
@@ -279,7 +288,7 @@ export function GameConfiguration({
             <ConfigItem
                 isHost={isHost}
                 label="Action Points"
-                value={actPts}
+                value={actPts + ''}
                 input={
                     <select
                         className="select-lg cursor-pointer opacity-0 w-full max-w-xs"
@@ -303,7 +312,7 @@ export function GameConfiguration({
             <ConfigItem
                 isHost={isHost}
                 label="Player Range"
-                value={range}
+                value={range + ''}
                 input={
                     <select
                         className="select-lg cursor-pointer opacity-0 w-full max-w-xs"

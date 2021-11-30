@@ -129,7 +129,7 @@ function usePlayerActionHandler() {
                         (p) => {
                             if (!p) throw Error('player uninitialized');
                             const up = {...p};
-                            up.lives = up.lives + action.Attack.lives_effect;
+                            up.lives = up.lives - action.Attack.lives_effect;
                             return up;
                         }
                     );
@@ -172,6 +172,28 @@ function usePlayerActionHandler() {
                     });
                 } else if ('Heal' in action) {
                     set(gamePlayersAtomFamily({user_id, game_id}), (p) => {
+                        if (!p) throw Error('player uninitialized');
+                        const up = {...p};
+                        up.lives += 1;
+                        return up;
+                    });
+                } else if ('Revive' in action) {
+                    // remove heart from acting player
+                    set(gamePlayersAtomFamily({user_id, game_id}), (p) => {
+                        if (!p) throw Error('player uninitialized');
+                        const up = {...p};
+                        up.lives -= 1;
+                        return up;
+                    });
+                    // revive
+                    const {
+                        Revive: {target_user_id},
+                    } = action;
+                    const targetKey = {
+                        user_id: target_user_id,
+                        game_id,
+                    };
+                    set(gamePlayersAtomFamily(targetKey), (p) => {
                         if (!p) throw Error('player uninitialized');
                         const up = {...p};
                         up.lives += 1;

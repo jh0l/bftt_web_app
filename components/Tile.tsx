@@ -47,56 +47,87 @@ function PlayerOverlay({
             : gameStats.phase == 'Init' && isUser
             ? gameStats.config.init_action_points
             : false;
-    if (isOn && gameStats.phase === 'InProg' && userPlayer.lives > 0) {
-        if (user.user_id === player.user_id) {
-            const upgradeHandler = () =>
-                RelayWS.sendPlayerAction({
-                    action: {RangeUpgrade: {point_cost: 3}},
-                    game_id,
-                    user_id,
-                });
-            const healHandler = () =>
-                RelayWS.sendPlayerAction({
-                    action: {Heal: {point_cost: 3}},
-                    game_id,
-                    user_id,
-                });
-            return (
-                <ul className="menu rounded-lg grid grid-col-2 gap-1 z-50">
-                    <li>
-                        <button
-                            className="btn btn-xs btn-outline btn-info"
-                            disabled={action_points < 3}
-                            onMouseDown={upgradeHandler}
-                        >
-                            upgrade
-                        </button>
-                    </li>
+    if (isOn && gameStats.phase === 'InProg') {
+        if (player.lives > 0) {
+            if (isUser) {
+                const upgradeHandler = () =>
+                    RelayWS.sendPlayerAction({
+                        action: {RangeUpgrade: {point_cost: 3}},
+                        game_id,
+                        user_id,
+                    });
+                const healHandler = () =>
+                    RelayWS.sendPlayerAction({
+                        action: {Heal: {point_cost: 3}},
+                        game_id,
+                        user_id,
+                    });
+                return (
+                    <ul className="menu rounded-lg grid grid-col-2 gap-1 z-50">
+                        <li>
+                            <button
+                                className="btn btn-xs btn-outline btn-info"
+                                disabled={action_points < 3}
+                                onMouseDown={upgradeHandler}
+                            >
+                                upgrade
+                            </button>
+                        </li>
 
-                    <li>
-                        <button
-                            className="btn btn-xs btn-outline btn-info"
-                            disabled={action_points < 3}
-                            onMouseDown={healHandler}
-                        >
-                            heal
-                        </button>
-                    </li>
-                </ul>
-            );
-        }
-        if (player.lives > 0 && inRange(userPlayer, player.pos)) {
-            const attackHandler = () =>
+                        <li>
+                            <button
+                                className="btn btn-xs btn-outline btn-info"
+                                disabled={action_points < 3}
+                                onMouseDown={healHandler}
+                            >
+                                heal
+                            </button>
+                        </li>
+                    </ul>
+                );
+            }
+            if (inRange(userPlayer, player.pos)) {
+                const attackHandler = () =>
+                    RelayWS.sendPlayerAction({
+                        action: {
+                            Attack: {lives_effect: 1, target_user_id: user_id},
+                        },
+                        game_id,
+                        user_id,
+                    });
+                const giveHandler = () =>
+                    RelayWS.sendPlayerAction({
+                        action: {Give: {target_user_id: user_id}},
+                        game_id,
+                        user_id,
+                    });
+                return (
+                    <ul className="menu rounded-lg grid grid-col-2 gap-1 z-50">
+                        <li>
+                            <button
+                                className="btn btn-xs btn-outline btn-error"
+                                disabled={action_points < 1}
+                                onMouseDown={attackHandler}
+                            >
+                                attack
+                            </button>
+                        </li>
+                        <li>
+                            <button
+                                className="btn btn-xs btn-outline btn-success"
+                                disabled={action_points < 1}
+                                onMouseDown={giveHandler}
+                            >
+                                give
+                            </button>
+                        </li>
+                    </ul>
+                );
+            }
+        } else if (!isUser) {
+            const reviveHandler = () =>
                 RelayWS.sendPlayerAction({
-                    action: {
-                        Attack: {lives_effect: -1, target_user_id: user_id},
-                    },
-                    game_id,
-                    user_id,
-                });
-            const giveHandler = () =>
-                RelayWS.sendPlayerAction({
-                    action: {Give: {target_user_id: user_id}},
+                    action: {Revive: {target_user_id: user_id, point_cost: 3}},
                     game_id,
                     user_id,
                 });
@@ -105,19 +136,10 @@ function PlayerOverlay({
                     <li>
                         <button
                             className="btn btn-xs btn-outline btn-error"
-                            disabled={action_points < 1}
-                            onMouseDown={attackHandler}
+                            disabled={action_points < 3}
+                            onMouseDown={reviveHandler}
                         >
-                            attack
-                        </button>
-                    </li>
-                    <li>
-                        <button
-                            className="btn btn-xs btn-outline btn-success"
-                            disabled={action_points < 1}
-                            onMouseDown={giveHandler}
-                        >
-                            give
+                            revive
                         </button>
                     </li>
                 </ul>
@@ -238,7 +260,10 @@ function PlayerTile({user_id, game_id}: {user_id: string; game_id: string}) {
                 </div>
             </div>
             <Portal>
-                <div className="absolute" style={coords}>
+                <div
+                    className={'absolute ' + (isOn ? ' z-10' : 'z-0')}
+                    style={coords}
+                >
                     <div className="relative">
                         <div className="translate-center">
                             {user && (

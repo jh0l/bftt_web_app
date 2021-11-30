@@ -89,12 +89,18 @@ export interface RangeUpgradeAction {
 export interface HealAction {
     point_cost: number;
 }
+export interface ReviveAction {
+    target_user_id: string;
+    point_cost: number;
+}
+
 export type ActionType =
     | {Attack: AttackAction}
     | {Give: GiveAction}
     | {Move: MoveAction}
     | {RangeUpgrade: RangeUpgradeAction}
-    | {Heal: HealAction};
+    | {Heal: HealAction}
+    | {Revive: ReviveAction};
 
 export interface PlayerAction {
     user_id: string;
@@ -112,7 +118,8 @@ export type ActionTypeEvent =
     | {Give: GiveAction}
     | {Move: MoveActionEvent}
     | {RangeUpgrade: RangeUpgradeAction}
-    | {Heal: HealAction};
+    | {Heal: HealAction}
+    | {Revive: ReviveAction};
 
 export interface PlayerActionResponse {
     user_id: string;
@@ -142,6 +149,7 @@ export const gamePlayerIdsAtomFamily = atomFamily<null | string[], string>({
     default: null,
 });
 
+// game stats map, indexed by game id directly
 export const gameStatsAtomFamily = atomFamily<null | GameStats, string>({
     key: 'game_stats_v1',
     default: null,
