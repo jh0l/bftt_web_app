@@ -185,7 +185,6 @@ export function GameConfiguration({
     const isHost = user.user_id === gameStats.host_user_id;
     return (
         <>
-            <div className="divider">Settings</div>
             <ConfigItem
                 isHost={isHost}
                 label="Time between recharges"
@@ -359,10 +358,10 @@ export function GameConfiguration({
             />
             {gameStats.config.init_pos === 'Random' && (
                 <button
-                    className="btn-block btn-info btn-sm font-bold"
+                    className="btn rounded-sm btn-block btn-info btn-sm font-bold"
                     onClick={() => configHandler({InitPos: 'Random'})}
                 >
-                    REGENERATE
+                    REGENERATE POSITIONS
                 </button>
             )}
         </>

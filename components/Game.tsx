@@ -11,10 +11,9 @@ export function Board({gameStats}: {gameStats: GameStats}) {
             .map((_, i) => <Tile key={i} i={i} len={size} game_id={game_id} />);
     }, [size, game_id]);
     return (
-        <div className="px-3 overflow-hidden">
-            <div style={{transform: 'scale(1)'}}>
+        <div className="md:px-3 overflow-hidden">
+            <div style={{transform: 'scale(1)'}} className="shadow-lg">
                 <div
-                    className="shadow-2xl"
                     style={{
                         margin: '0 auto',
                         boxSizing: 'border-box',
