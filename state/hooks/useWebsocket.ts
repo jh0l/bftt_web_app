@@ -1,6 +1,7 @@
 import {NextRouter, useRouter} from 'next/router';
 import {useEffect} from 'react';
 import {useRecoilCallback} from 'recoil';
+import {moveTileSingleton} from '../../components/MoveTileSingleton';
 import {useAlerts} from '../alerts';
 import {
     boardTileByUserFamily,
@@ -96,9 +97,26 @@ function useActionPointUpdateHandler() {
     return useRecoilCallback(
         ({set}) =>
             ({user_id, game_id, action_points}: ActionPointUpdate) => {
+                console.log(user_id, action_points);
                 set(gamePlayersAtomFamily({game_id, user_id}), (p) =>
                     p ? {...p, action_points} : p
                 );
+            }
+    );
+}
+interface TurnEndUpdate {
+    game_id: string;
+    turn_end_unix: number;
+}
+function useTurnEndHandler() {
+    return useRecoilCallback(
+        ({set}) =>
+            ({game_id, turn_end_unix}: TurnEndUpdate) => {
+                set(gameStatsAtomFamily(game_id), (g) => {
+                    if (!g) throw Error('game uninitialized');
+                    const up = {...g, turn_end_unix};
+                    return up;
+                });
             }
     );
 }
@@ -138,7 +156,7 @@ function usePlayerActionHandler() {
                         pusher({msg: user_id + ' won!', type: 'success'});
                     }
                 } else if ('Give' in action) {
-                    console.log('???');
+                    console.log(action.Give.target_user_id);
                 } else if ('Move' in action) {
                     {
                         // remove current position
@@ -162,6 +180,8 @@ function usePlayerActionHandler() {
                         up.pos = action.Move.to;
                         return up;
                     });
+                    // remove "move" highlight from board if present
+                    set(moveTileSingleton, null);
                 } else if ('RangeUpgrade' in action) {
                     // update player action points
                     set(gamePlayersAtomFamily({user_id, game_id}), (p) => {
@@ -214,6 +234,7 @@ export default function useWebsocket() {
     const updateGame = useUpdateGameHandler(router);
     const updatePlayer = useGamePlayerHandler();
     const updateAPU = useActionPointUpdateHandler();
+    const updateTurnEnd = useTurnEndHandler();
     const updateUserStatus = useUserStatusHandler();
     const updatePlayerAction = usePlayerActionHandler();
     const logout = useLogoutHandler();
@@ -228,6 +249,7 @@ export default function useWebsocket() {
         RelayWS.addJsonListener('/start_game', updateGame(GUp.Updt));
         RelayWS.addJsonListener('/user_status', updateUserStatus);
         RelayWS.addJsonListener('/action_point_update', updateAPU);
+        RelayWS.addJsonListener('/turn_end_unix', updateTurnEnd);
         RelayWS.addJsonListener('/player_action', updatePlayerAction);
         RelayWS.addListener('/alert', (s) => pusher({msg: s}));
         RelayWS.logoutCallback = logout;
@@ -243,5 +265,6 @@ export default function useWebsocket() {
         updateAPU,
         updateUserStatus,
         updatePlayerAction,
+        updateTurnEnd,
     ]);
 }

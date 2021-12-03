@@ -6,20 +6,22 @@ import {
     Pos,
 } from '../state/game';
 import {strColor} from '../lib/colors';
-import {atom, useRecoilState, useRecoilValue} from 'recoil';
+import {useRecoilValue} from 'recoil';
 import styles from './Tile.module.css';
-import React, {
-    ReactNode,
-    useCallback,
-    useEffect,
-    useLayoutEffect,
-    useRef,
-    useState,
-} from 'react';
+import React, {useCallback, useLayoutEffect, useRef, useState} from 'react';
 import {User, userAtom} from '../state/user';
 import RelayWS from '../state/websockets';
 import Portal from './Portal';
 import {useResizeDetector} from 'react-resize-detector';
+import MoveTileSingleton from './MoveTileSingleton';
+
+function ActionMenu({children}: {children: React.ReactNode}) {
+    return (
+        <ul className="menu rounded-lg flex justify-center w-full gap-1 z-50">
+            {children}
+        </ul>
+    );
+}
 
 function PlayerOverlay({
     game_id,
@@ -63,12 +65,12 @@ function PlayerOverlay({
                         user_id,
                     });
                 return (
-                    <ul className="menu rounded-lg grid grid-col-2 gap-1 z-50">
+                    <ActionMenu>
                         <li>
                             <button
-                                className="btn btn-xs btn-outline btn-info"
+                                className="btn btn-xs "
                                 disabled={action_points < 3}
-                                onMouseDown={upgradeHandler}
+                                onMouseUp={upgradeHandler}
                             >
                                 upgrade
                             </button>
@@ -76,14 +78,14 @@ function PlayerOverlay({
 
                         <li>
                             <button
-                                className="btn btn-xs btn-outline btn-info"
+                                className="btn btn-xs "
                                 disabled={action_points < 3}
-                                onMouseDown={healHandler}
+                                onMouseUp={healHandler}
                             >
                                 heal
                             </button>
                         </li>
-                    </ul>
+                    </ActionMenu>
                 );
             }
             if (inRange(userPlayer, player.pos)) {
@@ -102,26 +104,26 @@ function PlayerOverlay({
                         user_id,
                     });
                 return (
-                    <ul className="menu rounded-lg grid grid-col-2 gap-1 z-50">
+                    <ActionMenu>
                         <li>
                             <button
-                                className="btn btn-xs btn-outline btn-error"
+                                className="btn btn-xs  btn-block"
                                 disabled={action_points < 1}
-                                onMouseDown={attackHandler}
+                                onMouseUp={attackHandler}
                             >
                                 attack
                             </button>
                         </li>
                         <li>
                             <button
-                                className="btn btn-xs btn-outline btn-success"
+                                className="btn btn-xs "
                                 disabled={action_points < 1}
-                                onMouseDown={giveHandler}
+                                onMouseUp={giveHandler}
                             >
                                 give
                             </button>
                         </li>
-                    </ul>
+                    </ActionMenu>
                 );
             }
         } else if (!isUser) {
@@ -132,17 +134,17 @@ function PlayerOverlay({
                     user_id,
                 });
             return (
-                <ul className="menu rounded-lg grid grid-col-2 gap-1 z-50">
+                <ActionMenu>
                     <li>
                         <button
-                            className="btn btn-xs btn-outline btn-error"
+                            className="btn btn-xs "
                             disabled={action_points < 3}
-                            onMouseDown={reviveHandler}
+                            onMouseUp={reviveHandler}
                         >
                             revive
                         </button>
                     </li>
-                </ul>
+                </ActionMenu>
             );
         }
     }
@@ -150,11 +152,13 @@ function PlayerOverlay({
     const range = player.range > 99 ? '99+' : player.range;
     return (
         <>
-            <div
-                className="flex flex-row translate-center gap-0.5"
-                style={{top: 16}}
-            >
-                <div className="badge md:badge-xs font-bold">
+            <div className="absolute flex pointer-events-none select-none bottom-0 md:bottom-1 md:left-1">
+                <div
+                    className={
+                        'badge badge-sm md:badge-xs font-bold' +
+                        (lives === 0 ? ' btn-error bg-red-500' : '')
+                    }
+                >
                     <img
                         className="pr-px"
                         src="/Heart.png"
@@ -164,7 +168,14 @@ function PlayerOverlay({
                     ></img>
                     <span className="pl-px">{lives}</span>
                 </div>
-                <div className="badge md:badge-xs font-bold">
+            </div>
+            <div className="absolute flex pointer-events-none select-none bottom-0 md:bottom-1 right-0 md:right-1">
+                <div
+                    className={
+                        'badge badge-sm md:badge-xs font-bold' +
+                        (lives === 0 ? ' btn-error bg-red-500' : '')
+                    }
+                >
                     <img
                         className="pr-0.5"
                         src="/Range.png"
@@ -176,23 +187,15 @@ function PlayerOverlay({
                 </div>
             </div>
             {userPlayer.user_id === player.user_id && (
-                <div
-                    className="flex flex-row absolute translate-center"
-                    style={{top: -17, left: -11}}
-                >
-                    <div
-                        className="badge md:badge-sm badge-primary font-bold absolute"
-                        style={{top: -5, left: -12}}
-                    >
-                        <img
-                            className="pr-0.5"
-                            src="/ActionToken.png"
-                            width="13"
-                            height="13"
-                            alt="lives"
-                        ></img>
-                        {action_points > 99 ? '99+' : action_points}
-                    </div>
+                <div className="badge md:badge-sm badge-primary font-bold absolute pointer-events-none select-none top-0 md:top-1 left-0 md:left-1">
+                    <img
+                        className="pr-0.5"
+                        src="/ActionToken.png"
+                        width="13"
+                        height="13"
+                        alt="lives"
+                    ></img>
+                    {action_points > 99 ? '99+' : action_points}
                 </div>
             )}
         </>
@@ -207,8 +210,10 @@ function PlayerTile({user_id, game_id}: {user_id: string; game_id: string}) {
         const rect = targetRef.current?.getBoundingClientRect();
         if (rect) {
             setCoords({
-                left: rect.x + rect.width / 2,
-                top: rect.y + window.scrollY + rect.width / 2,
+                left: rect.x,
+                top: rect.y,
+                width: rect.width,
+                height: rect.height,
             });
         }
     }, []);
@@ -261,22 +266,20 @@ function PlayerTile({user_id, game_id}: {user_id: string; game_id: string}) {
             </div>
             <Portal>
                 <div
-                    className={'absolute ' + (isOn ? ' z-10' : 'z-0')}
+                    className={'absolute flex ' + (isOn ? ' z-10' : 'z-0')}
                     style={coords}
                 >
-                    <div className="relative">
-                        <div className="translate-center">
-                            {user && (
-                                <PlayerOverlay
-                                    game_id={game_id}
-                                    user_id={user_id}
-                                    user={user}
-                                    isOn={isOn}
-                                />
-                            )}
-                        </div>
-                    </div>
+                    {/* <div className="translate-center"> */}
+                    {user && (
+                        <PlayerOverlay
+                            game_id={game_id}
+                            user_id={user_id}
+                            user={user}
+                            isOn={isOn}
+                        />
+                    )}
                 </div>
+                {/* </div> */}
             </Portal>
         </div>
     );
@@ -340,7 +343,7 @@ function MoveAction({
     )
         return (
             <div
-                onMouseDown={handleAction}
+                onMouseUp={handleAction}
                 onTouchStart={handleTouchAction}
                 className={
                     'w-full h-full text-center flex justify-center items-center absolute inset-1/2 cursor-pointer select-none leading-none'
@@ -354,38 +357,6 @@ function MoveAction({
             </div>
         );
     return null;
-}
-const singleton = atom<number | null>({
-    key: 'singleton',
-    default: null,
-});
-
-interface SingletonProps {
-    tag: number;
-    unmount: () => void;
-    children: ReactNode;
-}
-/** Ensures only the last instance of this component mounted should be mounted (assuming `unmount` works)
- */
-function Singleton({tag, unmount, children}: SingletonProps) {
-    const [sgl, setSgl] = useRecoilState(singleton);
-    const [mounted, setMounted] = useState(0);
-    useEffect(() => {
-        if (mounted > 0 && tag !== sgl) {
-            unmount();
-        }
-    }, [unmount, mounted, tag, sgl]);
-    useEffect(() => {
-        let clear: NodeJS.Timeout | null = null;
-        if (mounted < 1) {
-            setSgl(tag);
-            clear = setTimeout(() => setMounted((x) => x + 1), 0);
-        }
-        return () => {
-            clear !== null && clearTimeout(clear);
-        };
-    }, [mounted, setSgl, tag]);
-    return <>{children}</>;
 }
 
 export function Tile({
@@ -405,7 +376,7 @@ export function Tile({
     return (
         <div
             onMouseEnter={() => setHover(true)}
-            onTouchStart={() => setHover(true)}
+            onTouchEnd={() => setHover(true)}
             onMouseLeave={unmount}
             className={
                 'overflow-visible grid-item relative ' +
@@ -417,7 +388,7 @@ export function Tile({
             {user_id ? (
                 <PlayerTile user_id={user_id} game_id={game_id} />
             ) : (
-                <div className="select-none text-2xs md:text-xs text-base-100">
+                <div className="select-none text-xs text-base-100">
                     <div className="absolute top-0.5 md:top-0 right-0.5">
                         {y}
                     </div>
@@ -427,9 +398,9 @@ export function Tile({
                 </div>
             )}
             {isHover && !user_id && (
-                <Singleton tag={i} unmount={unmount}>
+                <MoveTileSingleton tag={i} unmount={unmount}>
                     <MoveAction xy={{x, y}} game_id={game_id} />
-                </Singleton>
+                </MoveTileSingleton>
             )}
         </div>
     );

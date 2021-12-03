@@ -1,46 +1,123 @@
-import {gamePlayersAtomFamily, GameStats} from '../state/game';
+import {GamePhase, gamePlayersAtomFamily, GameStats} from '../state/game';
 import {strColor} from '../lib/colors';
 import {useRecoilValue} from 'recoil';
-import {userAtom, userStatusAtom} from '../state/user';
+import {User, userAtom, userStatusAtom} from '../state/user';
 import RelayWS from '../state/websockets';
 import Link from 'next/link';
 import {GameConfiguration} from './GameConfiguration';
 import Scrollbars from 'react-custom-scrollbars';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 
-export function GameSettings({gameStats}: {gameStats: GameStats}) {
-    const user = useRecoilValue(userAtom);
+function Countdown({seconds, duration}: {seconds: number; duration: number}) {
+    const [hours, mins, secs] = useMemo(() => {
+        const time = new Date(1970, 0, 0, 0, 0, seconds - 1);
+        const secs = time.getSeconds();
+        const mins = time.getMinutes();
+        const hours = time.getHours();
+        return [hours, mins, secs];
+    }, [seconds]);
+    return (
+        <div className="font-mono text-lg countdown">
+            {duration > 3600 && (
+                <>
+                    <span
+                        style={{'--value': hours} as React.CSSProperties}
+                    ></span>
+                    h
+                </>
+            )}
+            {duration > 60 && (
+                <>
+                    <span
+                        style={{'--value': mins} as React.CSSProperties}
+                    ></span>
+                    m
+                </>
+            )}
+            <>
+                <span style={{'--value': secs} as React.CSSProperties}></span>s
+            </>
+        </div>
+    );
+}
+
+interface ClockProps {
+    turnTimeSecs: number;
+    turnEndUnix: number;
+}
+const interval = 1000;
+function Clock({turnTimeSecs, turnEndUnix}: ClockProps) {
+    const [, setCountdown] = useState(0);
+    const to = useRef<NodeJS.Timeout>();
+    const updateClock = useCallback(
+        (
+            timeout = (turnEndUnix * 1000 - Date.now()) % interval || interval
+        ) => {
+            if (timeout < 1) return;
+            to.current = setTimeout(() => {
+                setCountdown((x) => x + 1);
+                updateClock();
+            }, timeout);
+        },
+        [turnEndUnix]
+    );
+    useEffect(() => {
+        updateClock();
+        return () => to.current && clearInterval(to.current);
+    }, [updateClock]);
+    const remaining = Math.round((turnEndUnix * 1000 - Date.now()) / 1000);
+    return (
+        <>
+            <Countdown seconds={remaining} duration={turnTimeSecs} />
+            <progress
+                className="progress progress-primary bg-base-content"
+                value={remaining / turnTimeSecs}
+                max="1"
+            ></progress>
+        </>
+    );
+}
+const gamePhaseLabels: {[k in GamePhase]: string} = {
+    Init: 'Game Setup',
+    InProg: 'Game in Progress',
+    End: 'Game Over',
+};
+export function GameParameters({
+    gameStats,
+    user,
+}: {
+    gameStats: GameStats;
+    user: User;
+}) {
     const userStatus = useRecoilValue(userStatusAtom);
-    const startGame = () => {
-        RelayWS.sendStartGame(gameStats.game_id);
-    };
-    const isHost = gameStats.host_user_id === user?.user_id;
     if (!user || !gameStats) return null;
     return (
         <>
-            <h2 className="xl">{gameStats.phase}</h2>
             {gameStats.phase == 'Init' && (
                 <>
+                    <div className="divider">
+                        {gamePhaseLabels[gameStats.phase]}
+                    </div>
                     <GameConfiguration gameStats={gameStats} user={user} />
-
-                    <div className="divider"></div>
-                    <button
-                        disabled={!isHost}
-                        className="btn btn-block btn-primary"
-                        onClick={startGame}
-                    >
-                        Start Game
-                    </button>
                 </>
             )}
+
             {gameStats.phase == 'InProg' && (
-                <h1 className="m-5 text-3xl font-bold">
-                    {'<Clock />'}-{gameStats.config.turn_time_secs}-
-                    {gameStats.turn_end_unix}
-                </h1>
+                <>
+                    <div className="divider">
+                        {gamePhaseLabels[gameStats.phase]}
+                    </div>
+                    <Clock
+                        turnEndUnix={gameStats.turn_end_unix}
+                        turnTimeSecs={gameStats.config.turn_time_secs}
+                    />
+                </>
             )}
             {gameStats.phase === 'End' && userStatus?.game_id === null && (
                 <>
-                    <div className="divider"></div>
+                    <div className="divider">
+                        {gamePhaseLabels[gameStats.phase]}
+                    </div>
                     <Link passHref href="/">
                         <button className="btn btn-block btn-primary">
                             Leave
@@ -60,13 +137,18 @@ export default function GameSidebar({
     gameStats: GameStats;
     playerIds: string[];
 }) {
+    const user = useRecoilValue(userAtom);
     const user_id = useRecoilValue(userAtom)?.user_id;
     if (!user_id) return null;
+    const startGame = () => {
+        RelayWS.sendStartGame(gameStats.game_id);
+    };
+    const isHost = gameStats.host_user_id === user?.user_id;
     return (
         <Scrollbars style={{width: '320px', height: '100%'}} autoHide>
-            <div className="flex flex-col gap-2 ml-3 w-72">
+            <div className="flex flex-col gap-2 ml-3 w-72 mb-6">
                 <h1 className="m-5 text-4xl font-bold">{gameStats.game_id}</h1>
-                <GameSettings gameStats={gameStats} />
+                {user && <GameParameters gameStats={gameStats} user={user} />}
                 <div className="divider">{playerIds.length} Players</div>
                 <div className="flex flex-col gap-2 w-72 max-h-full overflow-x-visible no-scrollbar">
                     <PlayerListItem
@@ -75,7 +157,7 @@ export default function GameSidebar({
                         showPoints
                         isHost={gameStats.host_user_id == user_id}
                     />
-                    <div className="divider"></div>
+                    <div className="divider my-0.5"></div>
                     {user_id !== gameStats.host_user_id && (
                         <PlayerListItem
                             playerId={gameStats.host_user_id}
@@ -95,6 +177,15 @@ export default function GameSidebar({
                             />
                         ))}
                 </div>
+                {gameStats.phase === 'Init' && (
+                    <button
+                        disabled={!isHost}
+                        className="btn btn-block btn-primary mt-4"
+                        onClick={startGame}
+                    >
+                        Start Game
+                    </button>
+                )}
             </div>
         </Scrollbars>
     );

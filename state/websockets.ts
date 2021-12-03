@@ -16,6 +16,7 @@ type ListenerEvent =
     | '/action_point_update'
     | '/conf_game'
     | '/user_status'
+    | '/turn_end_unix'
     | '/player_action'
     | '/alert';
 export default class RelayWS {
