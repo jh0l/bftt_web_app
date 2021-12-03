@@ -138,7 +138,7 @@ function PlayerOverlay({
                     <li>
                         <button
                             className="btn btn-xs "
-                            disabled={action_points < 3}
+                            disabled={player.lives < 1}
                             onMouseUp={reviveHandler}
                         >
                             revive
