@@ -380,7 +380,7 @@ export function Tile({
             onMouseLeave={unmount}
             className={
                 'overflow-visible grid-item relative ' +
-                ((Math.floor(i / len) + i) % 2 == 0
+                ((len % 2 ? i % 2 : (Math.floor(i / len) + i) % 2)
                     ? ' bg-gray-500'
                     : ' bg-gray-400')
             }
