@@ -206,9 +206,13 @@ function PlayerListItem({
     const player = useRecoilValue(
         gamePlayersAtomFamily({user_id: playerId, game_id: gameStats.game_id})
     );
+    if (!player) return <></>;
     return (
         <div className="shadow">
-            <div className={'indicator relative stat bg-' + strColor(playerId)}>
+            <div
+                className={'indicator relative stat bg-' + strColor(playerId)}
+                style={{filter: player.lives ? '' : 'opacity(0.2)'}}
+            >
                 {isHost && <div className="stat-title text-black">Host</div>}
                 {playerId === userId?.user_id && (
                     <div
@@ -221,22 +225,36 @@ function PlayerListItem({
                 <div className="text-black font-bold">
                     {playerId || <pre></pre>}
                 </div>
-                <div className="stat-desc opacity-100 text-black flex flex-row gap-1 w-30">
-                    <span className="px-1 bg-gray-200 bg-opacity-50 rounded-md font-bold">
+                <div className="stat-desc opacity-100 text-black flex flex-row gap-1 w-30 ">
+                    <span
+                        className={
+                            'px-1 rounded-md font-bold ' +
+                            (player.lives
+                                ? 'bg-gray-200 bg-opacity-50'
+                                : 'bg-red-500 bg-opacity-90')
+                        }
+                    >
                         <img
                             className="inline pr-1"
                             alt="Health Token"
                             src="/Heart.png"
                         ></img>
-                        {player?.lives}
+                        {player.lives}
                     </span>
-                    <span className="px-1 bg-gray-200 bg-opacity-50 rounded-md font-bold">
+                    <span
+                        className={
+                            'px-1 rounded-md font-bold ' +
+                            (player.lives
+                                ? 'bg-gray-200 bg-opacity-50'
+                                : 'bg-red-500 bg-opacity-90')
+                        }
+                    >
                         <img
                             className="inline pr-1 pb-0.5"
                             alt="player range"
                             src="/Range.png"
                         ></img>
-                        {player?.range}
+                        {player.range}
                     </span>
                     {showPoints && (
                         <span className="px-1 btn-primary rounded-md font-bold">
@@ -245,7 +263,7 @@ function PlayerListItem({
                                 alt="player range"
                                 src="/ActionToken.png"
                             ></img>
-                            {player?.action_points ||
+                            {player.action_points ||
                                 gameStats.config.init_action_points}
                         </span>
                     )}
