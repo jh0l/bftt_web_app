@@ -40,6 +40,7 @@ export interface Game {
     board: Board;
     turn_end_unix: number;
     config: GameConfig;
+    players_alive: string[];
 }
 
 export interface GameStats {
@@ -94,13 +95,18 @@ export interface ReviveAction {
     point_cost: number;
 }
 
+export interface CurseAction {
+    target_user_id: string;
+}
+
 export type ActionType =
     | {Attack: AttackAction}
     | {Give: GiveAction}
     | {Move: MoveAction}
     | {RangeUpgrade: RangeUpgradeAction}
     | {Heal: HealAction}
-    | {Revive: ReviveAction};
+    | {Revive: ReviveAction}
+    | {Curse: CurseAction};
 
 export interface PlayerAction {
     user_id: string;
@@ -152,6 +158,12 @@ export const gamePlayerIdsAtomFamily = atomFamily<null | string[], string>({
 // game stats map, indexed by game id directly
 export const gameStatsAtomFamily = atomFamily<null | GameStats, string>({
     key: 'game_stats_v1',
+    default: null,
+});
+
+// game players alive list, indexed by game id
+export const gamePlayersAliveAtomFamily = atomFamily<null | string[], string>({
+    key: 'game_players_alive',
     default: null,
 });
 

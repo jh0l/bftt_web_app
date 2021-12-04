@@ -14,6 +14,7 @@ import {
     gameStatsAtomFamily,
     Player,
     GameConfigResult,
+    gamePlayersAliveAtomFamily,
 } from '../game';
 import {UserStatus, userStatusAtom} from '../user';
 import RelayWS from '../websockets';
@@ -60,6 +61,8 @@ export function useUpdateGameHandler(router?: NextRouter) {
                     boardSize: game.board.size,
                     config: game.config,
                 });
+                // set players alive
+                set(gamePlayersAliveAtomFamily(game_id), game.players_alive);
                 // cleanup player tiles that have moved
                 for (let coords of Object.keys(cleanup)) {
                     const [x, y] = coords.split(',').map(Number);
@@ -131,7 +134,7 @@ function usePlayerActionHandler() {
     const {pusher} = useAlerts();
     return useRecoilCallback(
         ({set}) =>
-            async ({game_id, user_id, phase, action}: PlayerActionResponse) => {
+            ({game_id, user_id, phase, action}: PlayerActionResponse) => {
                 if ('Attack' in action) {
                     // update game phase
                     set(gameStatsAtomFamily(game_id), (g) => {
@@ -228,6 +231,15 @@ function usePlayerActionHandler() {
     );
 }
 
+function usePlayersAliveHandler() {
+    return useRecoilCallback(
+        ({set}) =>
+            ({game_id, alive}: {game_id: string; alive: string[]}) => {
+                set(gamePlayersAliveAtomFamily(game_id), alive);
+            }
+    );
+}
+
 export default function useWebsocket() {
     const router = useRouter();
     const {pusher} = useAlerts();
@@ -237,6 +249,7 @@ export default function useWebsocket() {
     const updateTurnEnd = useTurnEndHandler();
     const updateUserStatus = useUserStatusHandler();
     const updatePlayerAction = usePlayerActionHandler();
+    const updatePlayersAlive = usePlayersAliveHandler();
     const logout = useLogoutHandler();
     useEffect(() => {
         RelayWS.addListener('/error', (s) => pusher({msg: s, type: 'error'}));
@@ -251,6 +264,7 @@ export default function useWebsocket() {
         RelayWS.addJsonListener('/action_point_update', updateAPU);
         RelayWS.addJsonListener('/turn_end_unix', updateTurnEnd);
         RelayWS.addJsonListener('/player_action', updatePlayerAction);
+        RelayWS.addJsonListener('/players_alive_update', updatePlayersAlive);
         RelayWS.addListener('/alert', (s) => pusher({msg: s}));
         RelayWS.logoutCallback = logout;
         RelayWS.alertCallback = pusher;
@@ -266,5 +280,6 @@ export default function useWebsocket() {
         updateUserStatus,
         updatePlayerAction,
         updateTurnEnd,
+        updatePlayersAlive,
     ]);
 }

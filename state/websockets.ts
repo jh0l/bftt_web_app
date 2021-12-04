@@ -18,6 +18,7 @@ type ListenerEvent =
     | '/user_status'
     | '/turn_end_unix'
     | '/player_action'
+    | '/players_alive_update'
     | '/alert';
 export default class RelayWS {
     static WS_OPEN = false;
