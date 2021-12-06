@@ -1,6 +1,7 @@
 import {useEffect, useRef} from 'react';
 import {useRecoilValue} from 'recoil';
 import {AlertType, AlertState, useAlerts} from '../state/alerts';
+import Portal from './Portal';
 import Info from './svg/Info';
 import X from './svg/X';
 
@@ -46,9 +47,9 @@ export default function Alerts() {
     const alerts = useRecoilValue(AlertState);
     const {closer} = useAlerts();
     return (
-        <>
+        <Portal>
             {alerts.length > 0 && (
-                <div className="absolute w-screen h-screen top-0 right-5 pointer-events-none flex justify-start items-end flex-col gap-y-5 p-5 pt-16">
+                <div className="z-50 absolute w-screen h-screen top-0 right-5 pointer-events-none flex justify-start items-end flex-col gap-y-5 p-5 pt-16">
                     {alerts.map((n) => (
                         <Popup
                             key={n.key}
@@ -59,6 +60,6 @@ export default function Alerts() {
                     ))}
                 </div>
             )}
-        </>
+        </Portal>
     );
 }

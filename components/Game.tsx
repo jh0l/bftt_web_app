@@ -1,18 +1,48 @@
 import {GameStats} from '../state/game';
-import {useLayoutEffect, useMemo, useRef} from 'react';
+import {useCallback, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import {Tile} from './Tile';
 import GameSidebar from './GameSidebar';
+import {useResizeDetector} from 'react-resize-detector';
 
 export function Board({gameStats}: {gameStats: GameStats}) {
+    const [coords, setCoords] = useState({});
+    const targetRef = useRef<HTMLDivElement>(null);
+    const updateCoords = useCallback(() => {
+        const rect = targetRef.current?.getBoundingClientRect();
+        if (rect) {
+            setCoords({
+                left: rect.x,
+                top: rect.y,
+                width: rect.width,
+                height: rect.height,
+            });
+        }
+    }, []);
+    const onResize = updateCoords;
+    useResizeDetector({onResize, targetRef});
+    useLayoutEffect(() => {
+        window.addEventListener('resize', updateCoords);
+        return () => {
+            window.removeEventListener('resize', updateCoords);
+        };
+    }, [updateCoords]);
     const {boardSize: size, game_id} = gameStats;
     const tileMap = useMemo(() => {
         return Array(size * size)
             .fill(0)
-            .map((_, i) => <Tile key={i} i={i} len={size} game_id={game_id} />);
-    }, [size, game_id]);
+            .map((_, i) => (
+                <Tile
+                    key={i}
+                    i={i}
+                    len={size}
+                    game_id={game_id}
+                    coords={coords}
+                />
+            ));
+    }, [size, game_id, coords]);
     return (
         <div className="md:px-3 overflow-hidden">
-            <div style={{transform: 'scale(1)'}} className="shadow-lg">
+            <div className="shadow-lg">
                 <div
                     style={{
                         margin: '0 auto',
@@ -21,6 +51,7 @@ export function Board({gameStats}: {gameStats: GameStats}) {
                         gridTemplateColumns: `repeat(${size}, 1fr)`,
                         gridTemplateRows: `auto`,
                     }}
+                    ref={targetRef}
                 >
                     {tileMap}
                 </div>

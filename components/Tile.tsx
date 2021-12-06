@@ -8,11 +8,10 @@ import {
 import {strColor} from '../lib/colors';
 import {useRecoilValue} from 'recoil';
 import styles from './Tile.module.css';
-import React, {useCallback, useLayoutEffect, useRef, useState} from 'react';
+import React, {useCallback, useMemo, useState} from 'react';
 import {User, userAtom} from '../state/user';
 import RelayWS from '../state/websockets';
-import Portal from './Portal';
-import {useResizeDetector} from 'react-resize-detector';
+import PortalDynamic from './PortalDynamic';
 import MoveTileSingleton from './MoveTileSingleton';
 
 function ActionMenu({children}: {children: React.ReactNode}) {
@@ -201,39 +200,35 @@ function PlayerOverlay({
         </>
     );
 }
-
-function PlayerTile({user_id, game_id}: {user_id: string; game_id: string}) {
+interface PlayerTileProps {
+    user_id: string;
+    game_id: string;
+    coords: {
+        left: number;
+        top: number;
+        width: number;
+        height: number;
+        x: number;
+        y: number;
+        len: number;
+    };
+}
+function PlayerTile({user_id, game_id, coords}: PlayerTileProps) {
     const user = useRecoilValue(userAtom);
-
-    const targetRef = useRef<HTMLDivElement>(null);
-    const updateTooltipCoords = useCallback(() => {
-        const rect = targetRef.current?.getBoundingClientRect();
-        if (rect) {
-            setCoords({
-                left: rect.x,
-                top: rect.y,
-                width: rect.width,
-                height: rect.height,
-            });
-        }
-    }, []);
-    const onResize = updateTooltipCoords;
-    useResizeDetector({onResize, targetRef});
-    useLayoutEffect(() => {
-        setTimeout(updateTooltipCoords, 100);
-        window.addEventListener('resize', updateTooltipCoords);
-        return () => {
-            window.removeEventListener('resize', updateTooltipCoords);
-        };
-    }, [updateTooltipCoords]);
     const [isOn, setOn] = useState(false);
-    const [coords, setCoords] = useState({});
-
+    const tileCoords = useMemo(() => {
+        const {left, top, width, height, x, y, len} = coords;
+        const tile = width / len;
+        return {
+            left: left + tile * x,
+            top: top + tile * y,
+            width: tile,
+            height: height / len,
+        };
+    }, [coords]);
     return (
         <div
-            ref={targetRef}
             onMouseEnter={() => {
-                updateTooltipCoords();
                 setOn(true);
             }}
             onMouseLeave={() => {
@@ -264,12 +259,11 @@ function PlayerTile({user_id, game_id}: {user_id: string; game_id: string}) {
                     </div>
                 </div>
             </div>
-            <Portal>
+            <PortalDynamic>
                 <div
                     className={'absolute flex ' + (isOn ? ' z-10' : 'z-0')}
-                    style={coords}
+                    style={tileCoords}
                 >
-                    {/* <div className="translate-center"> */}
                     {user && (
                         <PlayerOverlay
                             game_id={game_id}
@@ -279,8 +273,11 @@ function PlayerTile({user_id, game_id}: {user_id: string; game_id: string}) {
                         />
                     )}
                 </div>
-                {/* </div> */}
-            </Portal>
+            </PortalDynamic>
+        </div>
+    );
+}
+
         </div>
     );
 }
@@ -363,10 +360,12 @@ export function Tile({
     i,
     len,
     game_id,
+    coords,
 }: {
     i: number;
     len: number;
     game_id: string;
+    coords: {} | {left: number; top: number; width: number; height: number};
 }) {
     const x = i % len;
     const y = Math.floor(i / len);
@@ -385,8 +384,12 @@ export function Tile({
                     : ' bg-gray-400')
             }
         >
-            {user_id ? (
-                <PlayerTile user_id={user_id} game_id={game_id} />
+            {user_id && 'top' in coords ? (
+                <PlayerTile
+                    user_id={user_id}
+                    game_id={game_id}
+                    coords={{...coords, x, y, len}}
+                />
             ) : (
                 <div className="select-none text-xs text-base-100">
                     <div className="absolute top-0.5 md:top-0 right-0.5">

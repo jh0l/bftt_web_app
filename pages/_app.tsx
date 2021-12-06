@@ -4,7 +4,6 @@ import {RecoilRoot} from 'recoil';
 import Alerts from '../components/Alerts';
 import useWebsocket from '../state/hooks/useWebsocket';
 import Navbar from '../components/Navbar';
-import Portal from '../components/Portal';
 
 function WebsocketListener() {
     useWebsocket();
