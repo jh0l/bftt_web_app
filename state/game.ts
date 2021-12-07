@@ -32,6 +32,11 @@ export type Board = {
     size: number;
 };
 
+export interface PlayersAliveDead {
+    alive: string[];
+    dead: string[];
+}
+
 export interface Game {
     phase: GamePhase;
     game_id: string;
@@ -40,7 +45,7 @@ export interface Game {
     board: Board;
     turn_end_unix: number;
     config: GameConfig;
-    players_alive: string[];
+    players_alive_dead: PlayersAliveDead;
 }
 
 export interface GameStats {
@@ -125,7 +130,8 @@ export type ActionTypeEvent =
     | {Move: MoveActionEvent}
     | {RangeUpgrade: RangeUpgradeAction}
     | {Heal: HealAction}
-    | {Revive: ReviveAction};
+    | {Revive: ReviveAction}
+    | {Curse: CurseAction};
 
 export interface PlayerActionResponse {
     user_id: string;
@@ -162,8 +168,11 @@ export const gameStatsAtomFamily = atomFamily<null | GameStats, string>({
 });
 
 // game players alive list, indexed by game id
-export const gamePlayersAliveAtomFamily = atomFamily<null | string[], string>({
-    key: 'game_players_alive',
+export const gamePlayersAliveDeadAtomFamily = atomFamily<
+    null | PlayersAliveDead,
+    string
+>({
+    key: 'game_players_alive_dead',
     default: null,
 });
 
@@ -204,4 +213,23 @@ export const boardTileByUserFamily = selectorFamily<
                 set(boardTileAtomFamily({game_id, user_id, x, y}), msg);
             }
         },
+});
+
+// currently selected candidate player votes to curse
+// resets when
+//      candidate dies
+//      player is revived
+//      turn ends
+export const playerCurseAtomFamily = atomFamily<
+    string | null,
+    {game_id: string; user_id: string}
+>({
+    key: 'player_curse_atom_family',
+    default: null,
+});
+
+// controls visibility of "curse" button for curse jury member
+export const setCurseAtom = atom({
+    key: 'set_curse_atom',
+    default: true,
 });

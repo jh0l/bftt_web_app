@@ -1,3 +1,4 @@
+// // GENERATE WHITELISTED CSS rules
 // const fs = require('fs');
 // const TYPES = ['info', 'success', 'warning', 'error'];
 // const COMPONENTS = ['alert', 'badge'];
@@ -10,13 +11,25 @@
 
 // const colors = ['red', 'yellow', 'green', 'blue', 'indigo', 'purple', 'pink'];
 // const grades = ['100', '300', '500', '700', '900'];
-// const typees = ['bg', 'border'];
+// const typees = ['bg', 'border', 'text'];
 
 // const cg = zip(colors, grades, (c) => (g) => c + '-' + g);
 // const tcg = zip(typees, cg, (t) => (cg) => t + '-' + cg);
 
 // SAFELIST.push(...tcg);
-// fs.writeFileSync('tw_safelist.txt', SAFELIST.join(`\n`), {flag: 'w'});
+// SAFELIST.push(
+//     ...`btn-success
+// btn-error
+// btn-info
+// dropdown-top
+// opacity-0
+// opacity-100
+// `.split('\n')
+// );
+// fs.writeFileSync('tw_safelist.txt', SAFELIST.join(`\n`), { flag: 'w' });
+
+// ACTUAL CONFIG
+
 module.exports = {
     mode: 'jit',
     purge: {

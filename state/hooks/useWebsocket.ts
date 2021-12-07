@@ -14,9 +14,11 @@ import {
     gameStatsAtomFamily,
     Player,
     GameConfigResult,
-    gamePlayersAliveAtomFamily,
+    gamePlayersAliveDeadAtomFamily,
+    playerCurseAtomFamily,
+    setCurseAtom,
 } from '../game';
-import {UserStatus, userStatusAtom} from '../user';
+import {userAtom, UserStatus, userStatusAtom} from '../user';
 import RelayWS from '../websockets';
 import {useLogoutHandler} from './useLogin';
 
@@ -62,7 +64,10 @@ export function useUpdateGameHandler(router?: NextRouter) {
                     config: game.config,
                 });
                 // set players alive
-                set(gamePlayersAliveAtomFamily(game_id), game.players_alive);
+                set(
+                    gamePlayersAliveDeadAtomFamily(game_id),
+                    game.players_alive_dead
+                );
                 // cleanup player tiles that have moved
                 for (let coords of Object.keys(cleanup)) {
                     const [x, y] = coords.split(',').map(Number);
@@ -109,17 +114,25 @@ function useActionPointUpdateHandler() {
 }
 interface TurnEndUpdate {
     game_id: string;
+    user_id: string;
     turn_end_unix: number;
 }
 function useTurnEndHandler() {
     return useRecoilCallback(
-        ({set}) =>
-            ({game_id, turn_end_unix}: TurnEndUpdate) => {
+        ({set, snapshot}) =>
+            async ({game_id, turn_end_unix}: TurnEndUpdate) => {
                 set(gameStatsAtomFamily(game_id), (g) => {
                     if (!g) throw Error('game uninitialized');
                     const up = {...g, turn_end_unix};
                     return up;
                 });
+                set(setCurseAtom, true);
+                const user = await snapshot.getPromise(userAtom);
+                console.log(user);
+                if (user) {
+                    const {user_id} = user;
+                    set(playerCurseAtomFamily({game_id, user_id}), null);
+                }
             }
     );
 }
@@ -222,6 +235,13 @@ function usePlayerActionHandler() {
                         up.lives += 1;
                         return up;
                     });
+                    // voter who is revived to candidate has vote nullified
+                    set(playerCurseAtomFamily(targetKey), null);
+                } else if ('Curse' in action) {
+                    set(
+                        playerCurseAtomFamily({game_id, user_id}),
+                        action.Curse.target_user_id
+                    );
                 } else {
                     throw Error(
                         'unhandled player action ' + JSON.stringify(action)
@@ -234,8 +254,14 @@ function usePlayerActionHandler() {
 function usePlayersAliveHandler() {
     return useRecoilCallback(
         ({set}) =>
-            ({game_id, alive}: {game_id: string; alive: string[]}) => {
-                set(gamePlayersAliveAtomFamily(game_id), alive);
+            ({
+                game_id,
+                alive_dead,
+            }: {
+                game_id: string;
+                alive_dead: {alive: string[]; dead: string[]};
+            }) => {
+                set(gamePlayersAliveDeadAtomFamily(game_id), alive_dead);
             }
     );
 }

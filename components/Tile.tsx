@@ -11,7 +11,7 @@ import styles from './Tile.module.css';
 import React, {useCallback, useMemo, useState} from 'react';
 import {User, userAtom} from '../state/user';
 import RelayWS from '../state/websockets';
-import PortalDynamic from './PortalDynamic';
+import Portal from './Portal';
 import MoveTileSingleton from './MoveTileSingleton';
 
 function ActionMenu({children}: {children: React.ReactNode}) {
@@ -22,6 +22,7 @@ function ActionMenu({children}: {children: React.ReactNode}) {
     );
 }
 
+// TODO use Board coords to create parent div of PlayerOverlay for hiding overflowing content
 function PlayerOverlay({
     game_id,
     user_id,
@@ -137,7 +138,7 @@ function PlayerOverlay({
                     <li>
                         <button
                             className="btn btn-xs "
-                            disabled={player.lives < 1}
+                            disabled={userPlayer.lives < 1}
                             onMouseUp={reviveHandler}
                         >
                             revive
@@ -259,7 +260,7 @@ function PlayerTile({user_id, game_id, coords}: PlayerTileProps) {
                     </div>
                 </div>
             </div>
-            <PortalDynamic>
+            <Portal>
                 <div
                     className={'absolute flex ' + (isOn ? ' z-10' : 'z-0')}
                     style={tileCoords}
@@ -273,11 +274,41 @@ function PlayerTile({user_id, game_id, coords}: PlayerTileProps) {
                         />
                     )}
                 </div>
-            </PortalDynamic>
+            </Portal>
         </div>
     );
 }
 
+export function JuryTile({
+    user_id,
+    game_id,
+}: {
+    user_id: string;
+    game_id: string;
+}) {
+    const player = useRecoilValue(gamePlayersAtomFamily({user_id, game_id}));
+    if (!player || player.lives) return null;
+    return (
+        <div
+            className={
+                'w-10 h-10 flex justify-center items-center animate-bounce-once select-none p-1 rounded-lg ' +
+                ('shadow-md z-10 bg-' + strColor(user_id))
+            }
+        >
+            <div
+                tabIndex={0}
+                className={
+                    'w-full h-full rounded-md flex justify-center items-center flex-col leading-none text-sm ' +
+                    styles['centeroverflow']
+                }
+                style={{
+                    backgroundColor: '#ffffff67',
+                }}
+            >
+                <div className={'text-black font-bold ' + styles['ts-tile']}>
+                    {user_id}
+                </div>
+            </div>
         </div>
     );
 }

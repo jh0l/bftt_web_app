@@ -1,16 +1,24 @@
-import {GamePhase, gamePlayersAtomFamily, GameStats} from '../state/game';
+import {
+    GamePhase,
+    gamePlayersAtomFamily,
+    GameStats,
+    Player,
+    setCurseAtom,
+} from '../state/game';
 import {strColor} from '../lib/colors';
-import {useRecoilValue} from 'recoil';
+import {useRecoilState, useRecoilValue} from 'recoil';
 import {User, userAtom, userStatusAtom} from '../state/user';
 import RelayWS from '../state/websockets';
 import Link from 'next/link';
 import {GameConfiguration} from './GameConfiguration';
 import Scrollbars from 'react-custom-scrollbars';
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {JuryPanel} from './JuryPanel';
 
 function Countdown({seconds, duration}: {seconds: number; duration: number}) {
     const [hours, mins, secs] = useMemo(() => {
-        const time = new Date(1970, 0, 0, 0, 0, seconds - 1);
+        if (seconds < 1) return [0, 0, 0];
+        const time = new Date(1970, 0, 0, 0, 0, seconds);
         const secs = time.getSeconds();
         const mins = time.getMinutes();
         const hours = time.getHours();
@@ -129,7 +137,7 @@ export function GameParameters({
     );
 }
 
-// TODO make player list scrollable https://malte-wessel.com/react-custom-scrollbars/
+// player list scrollable https://malte-wessel.com/react-custom-scrollbars/
 export default function GameSidebar({
     gameStats,
     playerIds,
@@ -138,8 +146,14 @@ export default function GameSidebar({
     playerIds: string[];
 }) {
     const user = useRecoilValue(userAtom);
-    const user_id = useRecoilValue(userAtom)?.user_id;
-    if (!user_id) return null;
+    const userPlayer = useRecoilValue(
+        gamePlayersAtomFamily({
+            game_id: gameStats.game_id,
+            user_id: user?.user_id || '',
+        })
+    );
+    if (!user?.user_id || !userPlayer) return null;
+    const {user_id} = user;
     const startGame = () => {
         RelayWS.sendStartGame(gameStats.game_id);
     };
@@ -148,12 +162,16 @@ export default function GameSidebar({
         <Scrollbars style={{width: '320px', height: '100%'}} autoHide>
             <div className="flex flex-col gap-2 ml-3 w-72 mb-6">
                 <h1 className="m-5 text-4xl font-bold">{gameStats.game_id}</h1>
+                {gameStats.phase !== 'Init' && (
+                    <JuryPanel gameStats={gameStats} />
+                )}
                 {user && <GameParameters gameStats={gameStats} user={user} />}
                 <div className="divider">{playerIds.length} Players</div>
                 <div className="flex flex-col gap-2 w-72 max-h-full overflow-x-visible no-scrollbar">
                     <PlayerListItem
                         playerId={user_id}
                         gameStats={gameStats}
+                        userPlayer={userPlayer}
                         showPoints
                         isHost={gameStats.host_user_id == user_id}
                     />
@@ -162,6 +180,7 @@ export default function GameSidebar({
                         <PlayerListItem
                             playerId={gameStats.host_user_id}
                             gameStats={gameStats}
+                            userPlayer={userPlayer}
                             isHost
                         />
                     )}
@@ -174,6 +193,7 @@ export default function GameSidebar({
                                 playerId={id}
                                 key={id}
                                 gameStats={gameStats}
+                                userPlayer={userPlayer}
                             />
                         ))}
                 </div>
@@ -191,13 +211,52 @@ export default function GameSidebar({
     );
 }
 
+function PlayerListItemAction({
+    userPlayer,
+    player,
+}: {
+    userPlayer: Player;
+    player: Player;
+}) {
+    const [votingCurse, setVotingCurse] = useRecoilState(setCurseAtom);
+    const curseHandler = () => {
+        setVotingCurse(false);
+        RelayWS.sendPlayerAction({
+            action: {Curse: {target_user_id: player.user_id}},
+            user_id: userPlayer.user_id,
+            game_id: player.game_id,
+        });
+    };
+    return (
+        <>
+            {!userPlayer.lives &&
+            player.user_id !== userPlayer.user_id &&
+            player.lives > 0 &&
+            votingCurse ? (
+                <button
+                    className="absolute right-5 bottom-6 btn btn-sm"
+                    onMouseUp={curseHandler}
+                >
+                    Curse
+                </button>
+            ) : (
+                <div className="absolute right-10 bottom-6 stat-figure text-neutral">
+                    • • •
+                </div>
+            )}
+        </>
+    );
+}
+
 function PlayerListItem({
     playerId,
+    userPlayer,
     gameStats,
     isHost = false,
     showPoints,
 }: {
     playerId: string;
+    userPlayer: Player;
     gameStats: GameStats;
     isHost?: boolean;
     showPoints?: boolean;
@@ -210,10 +269,12 @@ function PlayerListItem({
     return (
         <div className="shadow">
             <div
-                className={'indicator relative stat bg-' + strColor(playerId)}
+                className={
+                    'flex flex-col gap-1 indicator relative stat bg-' +
+                    strColor(playerId)
+                }
                 style={{filter: player.lives ? '' : 'opacity(0.2)'}}
             >
-                {isHost && <div className="stat-title text-black">Host</div>}
                 {playerId === userId?.user_id && (
                     <div
                         className="badge badge-primary absolute"
@@ -222,15 +283,18 @@ function PlayerListItem({
                         💻
                     </div>
                 )}
-                <div className="text-black font-bold">
-                    {playerId || <pre></pre>}
+                {isHost && (
+                    <div className="stat-title block text-black">Host</div>
+                )}
+                <div className="w-full block text-black font-bold">
+                    {playerId || <></>}
                 </div>
                 <div className="stat-desc opacity-100 text-black flex flex-row gap-1 w-30 ">
                     <span
                         className={
                             'px-1 rounded-md font-bold ' +
                             (player.lives
-                                ? 'bg-gray-200 bg-opacity-50'
+                                ? 'bg-white bg-opacity-40'
                                 : 'bg-red-500 bg-opacity-90')
                         }
                     >
@@ -245,7 +309,7 @@ function PlayerListItem({
                         className={
                             'px-1 rounded-md font-bold ' +
                             (player.lives
-                                ? 'bg-gray-200 bg-opacity-50'
+                                ? 'bg-white bg-opacity-40'
                                 : 'bg-red-500 bg-opacity-90')
                         }
                     >
@@ -268,7 +332,7 @@ function PlayerListItem({
                         </span>
                     )}
                 </div>
-                <div className="stat-figure text-neutral">• • •</div>
+                <PlayerListItemAction userPlayer={userPlayer} player={player} />
             </div>
         </div>
     );
