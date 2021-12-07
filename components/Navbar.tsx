@@ -19,7 +19,7 @@ function Search() {
                     />
                     <span
                         className={
-                            'popover rounded shadow-lg p-1 p-1 bg-gray-100 text-red-500 mt-1 top-10 border w-full min-w-min ' +
+                            'popover rounded shadow-lg p-1 bg-gray-100 text-red-500 mt-1 top-10 border w-full min-w-min ' +
                             (active ? 'active' : '')
                         }
                     >
@@ -57,6 +57,14 @@ function LogoutButton() {
     );
 }
 
+function CreditsButton() {
+    return (
+        <li>
+            <a>credits</a>
+        </li>
+    );
+}
+
 export default function Navbar() {
     const user = useRecoilValue(userAtom);
     if (!user) return null;
@@ -72,6 +80,7 @@ export default function Navbar() {
                         className="p-2 shadow menu dropdown-content bg-base-100 rounded-box w-52"
                     >
                         <LogoutButton />
+                        <CreditsButton />
                     </ul>
                 </div>
             </div>
