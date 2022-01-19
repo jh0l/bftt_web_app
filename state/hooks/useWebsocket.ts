@@ -17,6 +17,7 @@ import {
     gamePlayersAliveDeadAtomFamily,
     playerCurseAtomFamily,
     setCurseAtom,
+    boardActPtsByUserFamily,
 } from '../game';
 import {userAtom, UserStatus, userStatusAtom} from '../user';
 import RelayWS from '../websockets';
@@ -46,7 +47,7 @@ export function useUpdateGameHandler(router?: NextRouter) {
                     game = res.game;
                     if (res.result) cleanup = res.result;
                 } else game = res;
-                const {game_id, players, board} = game;
+                const {game_id, players, board, ap_board} = game;
                 const playerIdList = Object.keys(players);
                 if (updateType === GUp.Conn) {
                     // set new game and navigate
@@ -79,9 +80,15 @@ export function useUpdateGameHandler(router?: NextRouter) {
                     const {user_id} = player;
                     set(gamePlayersAtomFamily({game_id, user_id}), player);
                 }
+                // set player board
                 for (let [k, v] of Object.entries(board.map)) {
                     const [x1, y1] = k.split(',').map(Number);
                     set(boardTileByUserFamily({x: x1, y: y1, game_id}), v);
+                }
+                // set board action points
+                for (let [k, v] of Object.entries(ap_board)) {
+                    const [x, y] = k.split(',').map(Number);
+                    set(boardActPtsByUserFamily({x, y, game_id}), v);
                 }
             }
     );
@@ -135,6 +142,22 @@ function useTurnEndHandler() {
                 }
             }
     );
+}
+
+interface BoardAPUpdate {
+    board: Record<string, number>;
+    game_id: string;
+    old: string | null;
+    new: string | null;
+}
+function useBoardAPHandler() {
+    return useRecoilCallback(({set}) => (update: BoardAPUpdate) => {
+        let {game_id} = update;
+        for (let [k, v] of Object.entries(update.board)) {
+            let [x, y] = k.split(',').map(Number);
+            set(boardActPtsByUserFamily({x, y, game_id}), v);
+        }
+    });
 }
 
 function useUserStatusHandler() {
@@ -275,6 +298,7 @@ export default function useWebsocket() {
     const updateTurnEnd = useTurnEndHandler();
     const updateUserStatus = useUserStatusHandler();
     const updatePlayerAction = usePlayerActionHandler();
+    const updateBoardAP = useBoardAPHandler();
     const updatePlayersAlive = usePlayersAliveHandler();
     const logout = useLogoutHandler();
     useEffect(() => {
@@ -288,6 +312,7 @@ export default function useWebsocket() {
         RelayWS.addJsonListener('/start_game', updateGame(GUp.Updt));
         RelayWS.addJsonListener('/user_status', updateUserStatus);
         RelayWS.addJsonListener('/action_point_update', updateAPU);
+        RelayWS.addJsonListener('/board_action_points', updateBoardAP);
         RelayWS.addJsonListener('/turn_end_unix', updateTurnEnd);
         RelayWS.addJsonListener('/player_action', updatePlayerAction);
         RelayWS.addJsonListener('/players_alive_update', updatePlayersAlive);
@@ -303,6 +328,7 @@ export default function useWebsocket() {
         updateGame,
         updatePlayer,
         updateAPU,
+        updateBoardAP,
         updateUserStatus,
         updatePlayerAction,
         updateTurnEnd,

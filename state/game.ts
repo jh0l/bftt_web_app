@@ -27,10 +27,10 @@ export interface GameConfig {
 }
 
 export type GamePhase = 'Init' | 'InProg' | 'End';
-export type Board = {
-    map: Record<string, string>;
+export interface Board<T> {
+    map: Record<string, T>;
     size: number;
-};
+}
 
 export interface PlayersAliveDead {
     alive: string[];
@@ -42,7 +42,8 @@ export interface Game {
     game_id: string;
     host_user_id: string;
     players: {[k: string]: Player};
-    board: Board;
+    board: Board<string>;
+    ap_board: Board<{[k: string]: number}>;
     turn_end_unix: number;
     config: GameConfig;
     players_alive_dead: PlayersAliveDead;
@@ -97,7 +98,6 @@ export interface HealAction {
 }
 export interface ReviveAction {
     target_user_id: string;
-    point_cost: number;
 }
 
 export interface CurseAction {
@@ -150,11 +150,6 @@ export const gameListAtom = atom<string[]>({
     default: [],
 });
 
-// export const gamesAtomFamily = atomFamily<null | Game, string>({
-//     key: 'games_v1',
-//     default: null,
-// });
-
 // List of IDs of all players for a game, for indexing gamePlayersAtomFamily
 export const gamePlayerIdsAtomFamily = atomFamily<null | string[], string>({
     key: 'game_player_ids_v1',
@@ -190,7 +185,7 @@ const boardTileAtomFamily = atomFamily<
     default: null,
 });
 
-// convience selectorFamily for inferring the current game
+// convenience selectorFamily for inferring the current game board
 export const boardTileByUserFamily = selectorFamily<
     string | null,
     {x: number; y: number; game_id: string}
@@ -214,6 +209,40 @@ export const boardTileByUserFamily = selectorFamily<
             }
         },
 });
+
+const boardActPtsAtomFamily = atomFamily<
+    number | null,
+    {game_id: string; x: number; y: number; user_id: string}
+>({
+    key: 'board_action_points_v1',
+    default: null,
+});
+// convenience selectorFamily for inferring the current game action point board
+export const boardActPtsByUserFamily = selectorFamily<
+    number | null,
+    {x: number; y: number; game_id: string}
+>({
+    key: 'board_action_points_by_users_v1',
+    get:
+        ({x, y, game_id}: {x: number; y: number; game_id: string}) =>
+        ({get}) => {
+            const user_id = get(userAtom)?.user_id;
+            if (user_id) {
+                return get(boardActPtsAtomFamily({game_id, user_id, x, y}));
+            }
+            return null;
+        },
+    set:
+        ({x, y, game_id}) =>
+        ({set, get}, msg) => {
+            const user_id = get(userAtom)?.user_id;
+            if (user_id) {
+                set(boardActPtsAtomFamily({game_id, user_id, x, y}), msg);
+            }
+        },
+});
+
+// convience
 
 // currently selected candidate player votes to curse
 // resets when

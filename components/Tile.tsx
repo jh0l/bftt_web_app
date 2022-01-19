@@ -1,4 +1,5 @@
 import {
+    boardActPtsByUserFamily,
     boardTileByUserFamily,
     gamePlayersAtomFamily,
     gameStatsAtomFamily,
@@ -129,7 +130,7 @@ function PlayerOverlay({
         } else if (!isUser) {
             const reviveHandler = () =>
                 RelayWS.sendPlayerAction({
-                    action: {Revive: {target_user_id: user_id, point_cost: 3}},
+                    action: {Revive: {target_user_id: user_id}},
                     game_id,
                     user_id,
                 });
@@ -401,6 +402,7 @@ export function Tile({
     const x = i % len;
     const y = Math.floor(i / len);
     const user_id = useRecoilValue(boardTileByUserFamily({x, y, game_id}));
+    const action_pts = useRecoilValue(boardActPtsByUserFamily({x, y, game_id}));
     const [isHover, setHover] = useState(false);
     const unmount = useCallback(() => setHover(false), []);
     return (
@@ -429,6 +431,11 @@ export function Tile({
                     <div className="absolute bottom-0 left-0.5 md:left-1">
                         {(x + 10).toString(36).toUpperCase()}
                     </div>
+                </div>
+            )}
+            {action_pts && (
+                <div className="absolute top-2 md:top-1 right-2 text-black">
+                    AP: {action_pts}
                 </div>
             )}
             {isHover && !user_id && (
