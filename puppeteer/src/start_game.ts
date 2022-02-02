@@ -1,4 +1,4 @@
-import puppeteer, {Browser} from 'puppeteer';
+import puppeteer, {Browser, Page} from 'puppeteer';
 
 // Test out Init Pos manual / random / regenerate
 // Test out logoutCallback on websocket close (and manual logout)
@@ -30,6 +30,7 @@ async function newBFTT(
             await page.click('#join-game-submit');
         }
     } catch (e) {}
+    return page;
 }
 
 (async () => {
@@ -38,11 +39,12 @@ async function newBFTT(
         args: ['--window-size=1920,1080', '--auto-open-devtools-for-tabs'],
     });
     (await browser.pages()).forEach((x) => x.close());
-    const game = '2';
-    await newBFTT(browser, 'a', game, true);
-    const users = ['b', 'c', 'd', 'e'];
-    for (let x of users) {
-        await newBFTT(browser, x, game);
+    const game = '1';
+    const pages: Page[] = [];
+    pages.push(await newBFTT(browser, 'a', game, true));
+    const users = ['b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm'];
+    for (let x of users.slice(0, 6)) {
+        pages.push(await newBFTT(browser, x, game));
     }
-    // await browser.close();
+    pages[0]?.bringToFront();
 })();
