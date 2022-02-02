@@ -16,7 +16,7 @@ type ListenerEvent =
     | '/action_point_update'
     | '/conf_game'
     | '/user_status'
-    | '/board_action_points'
+    | '/tile_hearts_update'
     | '/turn_end_unix'
     | '/player_action'
     | '/players_alive_update'

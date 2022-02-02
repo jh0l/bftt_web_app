@@ -43,7 +43,7 @@ export interface Game {
     host_user_id: string;
     players: {[k: string]: Player};
     board: Board<string>;
-    ap_board: Board<{[k: string]: number}>;
+    board_hearts: Board<number>;
     turn_end_unix: number;
     config: GameConfig;
     players_alive_dead: PlayersAliveDead;
@@ -98,6 +98,7 @@ export interface HealAction {
 }
 export interface ReviveAction {
     target_user_id: string;
+    point_cost: number;
 }
 
 export interface CurseAction {
@@ -111,7 +112,8 @@ export type ActionType =
     | {RangeUpgrade: RangeUpgradeAction}
     | {Heal: HealAction}
     | {Revive: ReviveAction}
-    | {Curse: CurseAction};
+    | {Curse: CurseAction}
+    | {Redeem: RedeemAction};
 
 export interface PlayerAction {
     user_id: string;
@@ -124,6 +126,13 @@ export interface MoveActionEvent {
     to: Pos;
 }
 
+export type RedeemAction = {
+    TileHearts: {
+        pos: Pos;
+        new_lives: number;
+    };
+};
+
 export type ActionTypeEvent =
     | {Attack: AttackAction}
     | {Give: GiveAction}
@@ -131,7 +140,8 @@ export type ActionTypeEvent =
     | {RangeUpgrade: RangeUpgradeAction}
     | {Heal: HealAction}
     | {Revive: ReviveAction}
-    | {Curse: CurseAction};
+    | {Curse: CurseAction}
+    | {Redeem: RedeemAction};
 
 export interface PlayerActionResponse {
     user_id: string;
@@ -217,8 +227,8 @@ const boardActPtsAtomFamily = atomFamily<
     key: 'board_action_points_v1',
     default: null,
 });
-// convenience selectorFamily for inferring the current game action point board
-export const boardActPtsByUserFamily = selectorFamily<
+// convenience selectorFamily for inferring the current game board tile hearts
+export const boardHeartsByUserFamily = selectorFamily<
     number | null,
     {x: number; y: number; game_id: string}
 >({

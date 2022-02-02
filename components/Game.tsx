@@ -1,8 +1,24 @@
-import {GameStats} from '../state/game';
-import {useCallback, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import {
+    boardHeartsByUserFamily,
+    gamePlayersAtomFamily,
+    GameStats,
+    Pos,
+} from '../state/game';
+import {
+    memo,
+    useCallback,
+    useEffect,
+    useLayoutEffect,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import {Tile} from './Tile';
 import GameSidebar from './GameSidebar';
 import {useResizeDetector} from 'react-resize-detector';
+import {useRecoilValue} from 'recoil';
+import {userAtom} from '../state/user';
+import RelayWS from '../state/websockets';
 
 export function Board({gameStats}: {gameStats: GameStats}) {
     const [coords, setCoords] = useState({});
@@ -95,6 +111,44 @@ function Sizer({children, divisor}: {children: JSX.Element; divisor: number}) {
     );
 }
 
+// send Tile Hearts redeem request when user player position has tile hearts
+const RedeemListener = memo(function RedeemListenerFn({
+    game_id,
+    user_id,
+}: {
+    user_id: string;
+    game_id: string;
+}) {
+    const userPlayer = useRecoilValue(
+        gamePlayersAtomFamily({game_id, user_id})
+    );
+    const [lastPos, setLastPos] = useState<Pos>({x: -1, y: -1});
+    const [lastHrt, setLastHrt] = useState<number | null>(null);
+    const {x, y} = userPlayer?.pos || {x: -1, y: -1};
+    const tileHearts = useRecoilValue(boardHeartsByUserFamily({game_id, x, y}));
+    useEffect(() => {
+        if (tileHearts != null) {
+            const newReq =
+                lastPos.x !== x || lastPos.y !== y || lastHrt !== tileHearts;
+            if (tileHearts > 0 && newReq) {
+                // serverside heart count is used
+                RelayWS.sendPlayerAction({
+                    action: {
+                        Redeem: {
+                            TileHearts: {pos: {x, y}, new_lives: 0},
+                        },
+                    },
+                    game_id,
+                    user_id,
+                });
+            }
+        }
+        if (x !== lastPos.x || y !== lastPos.y) setLastPos({x, y});
+        if (!lastHrt || lastHrt != tileHearts) setLastHrt(tileHearts);
+    }, [tileHearts, x, y, game_id, user_id, lastPos, lastHrt]);
+    return null;
+});
+
 export default function Game({
     gameStats,
     playerIds,
@@ -102,12 +156,19 @@ export default function Game({
     gameStats: GameStats;
     playerIds: string[];
 }) {
+    const user = useRecoilValue(userAtom);
     return (
         <div className="flex flex-grow flex-col-reverse lg:flex-row-reverse justify-center items-center lg:items-start">
             <GameSidebar gameStats={gameStats} playerIds={playerIds} />
             <Sizer divisor={gameStats.boardSize}>
                 <Board gameStats={gameStats} />
             </Sizer>
+            {user && (
+                <RedeemListener
+                    game_id={gameStats.game_id}
+                    user_id={user.user_id}
+                />
+            )}
         </div>
     );
 }

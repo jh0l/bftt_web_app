@@ -17,7 +17,8 @@ import {
     gamePlayersAliveDeadAtomFamily,
     playerCurseAtomFamily,
     setCurseAtom,
-    boardActPtsByUserFamily,
+    boardHeartsByUserFamily,
+    Pos,
 } from '../game';
 import {userAtom, UserStatus, userStatusAtom} from '../user';
 import RelayWS from '../websockets';
@@ -47,7 +48,7 @@ export function useUpdateGameHandler(router?: NextRouter) {
                     game = res.game;
                     if (res.result) cleanup = res.result;
                 } else game = res;
-                const {game_id, players, board, ap_board} = game;
+                const {game_id, players, board, board_hearts} = game;
                 const playerIdList = Object.keys(players);
                 if (updateType === GUp.Conn) {
                     // set new game and navigate
@@ -86,9 +87,9 @@ export function useUpdateGameHandler(router?: NextRouter) {
                     set(boardTileByUserFamily({x: x1, y: y1, game_id}), v);
                 }
                 // set board action points
-                for (let [k, v] of Object.entries(ap_board)) {
+                for (let [k, v] of Object.entries(board_hearts.map)) {
                     const [x, y] = k.split(',').map(Number);
-                    set(boardActPtsByUserFamily({x, y, game_id}), v);
+                    set(boardHeartsByUserFamily({x, y, game_id}), v);
                 }
             }
     );
@@ -112,7 +113,6 @@ function useActionPointUpdateHandler() {
     return useRecoilCallback(
         ({set}) =>
             ({user_id, game_id, action_points}: ActionPointUpdate) => {
-                console.log(user_id, action_points);
                 set(gamePlayersAtomFamily({game_id, user_id}), (p) =>
                     p ? {...p, action_points} : p
                 );
@@ -135,7 +135,6 @@ function useTurnEndHandler() {
                 });
                 set(setCurseAtom, true);
                 const user = await snapshot.getPromise(userAtom);
-                console.log(user);
                 if (user) {
                     const {user_id} = user;
                     set(playerCurseAtomFamily({game_id, user_id}), null);
@@ -145,18 +144,13 @@ function useTurnEndHandler() {
 }
 
 interface BoardAPUpdate {
-    board: Record<string, number>;
     game_id: string;
-    old: string | null;
-    new: string | null;
+    set: [Pos, number];
 }
-function useBoardAPHandler() {
+function useTileHeartsHandler() {
     return useRecoilCallback(({set}) => (update: BoardAPUpdate) => {
-        let {game_id} = update;
-        for (let [k, v] of Object.entries(update.board)) {
-            let [x, y] = k.split(',').map(Number);
-            set(boardActPtsByUserFamily({x, y, game_id}), v);
-        }
+        let {game_id, set: apSet} = update;
+        set(boardHeartsByUserFamily({...apSet[0], game_id}), apSet[1]);
     });
 }
 
@@ -265,6 +259,27 @@ function usePlayerActionHandler() {
                         playerCurseAtomFamily({game_id, user_id}),
                         action.Curse.target_user_id
                     );
+                } else if ('Redeem' in action) {
+                    if ('TileHearts' in action.Redeem) {
+                        let {x, y} = action.Redeem.TileHearts.pos;
+                        // update board
+                        set(boardHeartsByUserFamily({x, y, game_id}), 0);
+                        // update player
+                        console.log(
+                            'redeem',
+                            user_id,
+                            action.Redeem.TileHearts
+                        );
+                        set(gamePlayersAtomFamily({user_id, game_id}), (p) => {
+                            if (!p) throw Error('player uninitialized');
+                            const up = {...p};
+                            up.lives = action.Redeem.TileHearts.new_lives;
+                            return up;
+                        });
+                    } else {
+                        console.error(action.Redeem);
+                        throw Error('unknown redeem action');
+                    }
                 } else {
                     throw Error(
                         'unhandled player action ' + JSON.stringify(action)
@@ -298,7 +313,7 @@ export default function useWebsocket() {
     const updateTurnEnd = useTurnEndHandler();
     const updateUserStatus = useUserStatusHandler();
     const updatePlayerAction = usePlayerActionHandler();
-    const updateBoardAP = useBoardAPHandler();
+    const updateBoardAP = useTileHeartsHandler();
     const updatePlayersAlive = usePlayersAliveHandler();
     const logout = useLogoutHandler();
     useEffect(() => {
@@ -312,7 +327,7 @@ export default function useWebsocket() {
         RelayWS.addJsonListener('/start_game', updateGame(GUp.Updt));
         RelayWS.addJsonListener('/user_status', updateUserStatus);
         RelayWS.addJsonListener('/action_point_update', updateAPU);
-        RelayWS.addJsonListener('/board_action_points', updateBoardAP);
+        RelayWS.addJsonListener('/tile_hearts_update', updateBoardAP);
         RelayWS.addJsonListener('/turn_end_unix', updateTurnEnd);
         RelayWS.addJsonListener('/player_action', updatePlayerAction);
         RelayWS.addJsonListener('/players_alive_update', updatePlayersAlive);

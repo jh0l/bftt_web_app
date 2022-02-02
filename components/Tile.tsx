@@ -1,5 +1,5 @@
 import {
-    boardActPtsByUserFamily,
+    boardHeartsByUserFamily,
     boardTileByUserFamily,
     gamePlayersAtomFamily,
     gameStatsAtomFamily,
@@ -130,7 +130,7 @@ function PlayerOverlay({
         } else if (!isUser) {
             const reviveHandler = () =>
                 RelayWS.sendPlayerAction({
-                    action: {Revive: {target_user_id: user_id}},
+                    action: {Revive: {target_user_id: user_id, point_cost: 0}},
                     game_id,
                     user_id,
                 });
@@ -344,36 +344,32 @@ function MoveAction({
     );
     const gameStats = useRecoilValue(gameStatsAtomFamily(game_id));
 
-    const handleAction: React.MouseEventHandler<HTMLDivElement> = (e) => {
-        if (e.button !== 0) return;
-        user_id
-            ? RelayWS.sendPlayerAction({
-                  user_id,
-                  game_id,
-                  action: {Move: {pos: {x: xy.x, y: xy.y}}},
-              })
-            : console.warn('user not loaded');
-    };
-    const handleTouchAction = () => {
-        user_id
-            ? RelayWS.sendPlayerAction({
-                  user_id,
-                  game_id,
-                  action: {Move: {pos: {x: xy.x, y: xy.y}}},
-              })
-            : console.warn('user not loaded');
-    };
     if (
         user_id &&
         userPlayer &&
         ((gameStats?.phase === 'Init' &&
             gameStats.config.init_pos === 'Manual') ||
             (gameStats?.phase === 'InProg' && inRange(userPlayer, xy)))
-    )
+    ) {
+        const handleAction = () => {
+            user_id
+                ? RelayWS.sendPlayerAction({
+                      user_id,
+                      game_id,
+                      action: {Move: {pos: {x: xy.x, y: xy.y}}},
+                  })
+                : console.warn('user not loaded');
+        };
+        const handleMouseAction: React.MouseEventHandler<HTMLDivElement> = (
+            e
+        ) => {
+            if (e.button !== 0) return;
+            handleAction();
+        };
         return (
             <div
-                onMouseUp={handleAction}
-                onTouchStart={handleTouchAction}
+                onMouseUp={handleMouseAction}
+                onTouchStart={handleAction}
                 className={
                     'w-full h-full text-center flex justify-center items-center absolute inset-1/2 cursor-pointer select-none leading-none'
                 }
@@ -385,6 +381,7 @@ function MoveAction({
                 <span className="opacity-10">move</span>
             </div>
         );
+    }
     return null;
 }
 
@@ -402,7 +399,7 @@ export function Tile({
     const x = i % len;
     const y = Math.floor(i / len);
     const user_id = useRecoilValue(boardTileByUserFamily({x, y, game_id}));
-    const action_pts = useRecoilValue(boardActPtsByUserFamily({x, y, game_id}));
+    const hearts = useRecoilValue(boardHeartsByUserFamily({x, y, game_id}));
     const [isHover, setHover] = useState(false);
     const unmount = useCallback(() => setHover(false), []);
     return (
@@ -433,9 +430,18 @@ export function Tile({
                     </div>
                 </div>
             )}
-            {action_pts && (
+            {hearts != null && hearts > 0 && (
                 <div className="absolute top-2 md:top-1 right-2 text-black">
-                    AP: {action_pts}
+                    <div>
+                        <img
+                            className="pr-px mr-1 inline"
+                            src="/Heart.png"
+                            width="13"
+                            height="13"
+                            alt="lives"
+                        ></img>
+                        {hearts}
+                    </div>
                 </div>
             )}
             {isHover && !user_id && (
